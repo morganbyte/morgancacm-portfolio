@@ -43,15 +43,7 @@ function ProjectCard({ project, lang }: { project: Project; lang: Locale }) {
           <p className="truncate font-mono text-xs text-muted">{host}</p>
         </div>
 
-        <Badge variant="outline">
-          {project.inProgress && (
-            <span className="relative flex size-1.5">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-amber-400/60" />
-              <span className="relative inline-flex size-1.5 rounded-full bg-amber-400" />
-            </span>
-          )}
-          {project.year[lang]}
-        </Badge>
+        <Badge variant="outline">{project.year}</Badge>
       </CardHeader>
 
       <CardContent className="space-y-3">

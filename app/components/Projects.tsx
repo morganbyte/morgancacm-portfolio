@@ -41,7 +41,7 @@ export default function Projects({
                 {project.title}
               </h3>
               <span className="shrink-0 font-mono text-xs text-muted">
-                {project.year[lang]}
+                {project.year}
               </span>
             </div>
 
