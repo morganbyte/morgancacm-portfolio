@@ -23,7 +23,7 @@ function ProjectCard({ project }: { project: Project }) {
 }
 
 export default function ProjectsGrid() {
-  const featured = projects.slice(0, 1);
+  const featured = projects.slice(0, 2);
 
   return (
     <section className="mb-20">
