@@ -1,10 +1,26 @@
 import { ImageResponse } from "next/og";
+import type { Locale } from "../lib/i18n";
 
-export const size = { width: 1200, height: 630 };
-export const contentType = "image/png";
-export const alt = "Andrés Morgan — Software Developer";
+const copy = {
+  es: {
+    alt: "Andrés Morgan — Desarrollador de software",
+    heading: "Convierto mis ideas de producto en sistemas de software funcionales.",
+  },
+  en: {
+    alt: "Andrés Morgan — Software Developer",
+    heading: "I turn my product ideas into functional software systems.",
+  },
+};
 
-export default async function OpengraphImage() {
+
+export const ogSize = { width: 1200, height: 630 };
+
+export function ogAlt(lang: Locale) {
+  return copy[lang].alt;
+}
+
+export function ogImage(lang: Locale) {
+  const t = copy[lang];
   return new ImageResponse(
     (
       <div
@@ -46,7 +62,7 @@ export default async function OpengraphImage() {
               letterSpacing: -1.5,
             }}
           >
-            I turn my product ideas into functional software systems.
+            {t.heading}
           </div>
           <div
             style={{
@@ -54,11 +70,11 @@ export default async function OpengraphImage() {
               color: "#a3a3a3",
             }}
           >
-            Andrés Morgan — Software Developer
+            {t.alt}
           </div>
         </div>
       </div>
     ),
-    { ...size }
+    { ...ogSize }
   );
 }

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
+import type { Locale } from "../lib/i18n";
 
 type Building = {
   name: string;
@@ -9,14 +10,34 @@ type Building = {
 
 const building: Building[] = [
   { name: "zpenz", href: "https://zpenz.vercel.app" },
+  { name: "Vekipper", href: "https://vekipper.vercel.app" },
 ];
 
-function joinBuilding(items: Building[]) {
+const copy = {
+  es: {
+    role: "Desarrollador de software | Fundador de",
+    and: " y ",
+    bio: [
+      "Soy desarrollador de software y paso mi tiempo construyendo prácticamente cualquier cosa que se me ocurra y pueda hacer realidad. Actualmente estoy construyendo zpenz: una web para gestionar las finanzas quincenales mediante un sistema de consejos y decisiones automatizadas.",
+      "Mi principal interés es el backend, en concreto diseñar el sistema óptimo para cada solución que desarrollo. Me interesan mucho los microservicios, pero solo cuando de verdad son necesarios; si no, creo que una arquitectura monolítica suele bastar para resolver casi cualquier problema.",
+    ],
+  },
+  en: {
+    role: "Software developer | Founder of",
+    and: " and ",
+    bio: [
+      "I’m a software developer who spends my time building basically anything I can think of and bring to life. I’m currently building zpenz: a website for managing biweekly finances through a system of automated tips and decisions.",
+      "My main interest is the backend, specifically designing optimal systems for each solution I develop. I’m very interested in microservices—but only when they’re truly necessary; otherwise, I believe a monolithic architecture is usually sufficient to solve any given problem.",
+    ],
+  },
+};
+
+function joinBuilding(items: Building[], and: string) {
   const len = items.length;
   return items.map((item, i) => {
     let separator = "";
     if (i === len - 1) separator = ".";
-    else if (i === len - 2) separator = len > 2 ? ", and " : " and ";
+    else if (i === len - 2) separator = len > 2 ? `,${and}` : and;
     else separator = ", ";
 
     const external = item.href.startsWith("http");
@@ -42,7 +63,9 @@ function joinBuilding(items: Building[]) {
   });
 }
 
-export default function Hero() {
+export default function Hero({ lang }: { lang: Locale }) {
+  const t = copy[lang];
+
   return (
     <section className="mb-16">
       <div className="flex items-center gap-4">
@@ -60,18 +83,15 @@ export default function Hero() {
             morgancacm
           </h1>
           <p className="text-sm leading-relaxed text-muted">
-            Software developer | Founder {joinBuilding(building)}
+            {t.role} {joinBuilding(building, t.and)}
           </p>
         </div>
       </div>
 
       <div className="mt-10 max-w-prose space-y-4 leading-relaxed text-foreground/80">
-        <p>
-          I’m a software developer who spends my time building basically anything I can think of and bring to life. I’m currently building zpenz: a website for managing biweekly finances through a system of automated tips and decisions.
-        </p>
-        <p>
-          My main interest is the backend, specifically designing optimal systems for each solution I develop. I’m very interested in microservices—but only when they’re truly necessary; otherwise, I believe a monolithic architecture is usually sufficient to solve any given problem.
-        </p>
+        {t.bio.map((paragraph) => (
+          <p key={paragraph}>{paragraph}</p>
+        ))}
       </div>
     </section>
   );
