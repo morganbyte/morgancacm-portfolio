@@ -42,7 +42,7 @@ export default function About({ lang }: { lang: Locale }) {
       </div>
 
       <div className="mt-10">
-        <h2 className="mb-3 font-mono text-xs tracking-wider text-muted">
+        <h2 className="mb-3 text-xs tracking-wider text-muted">
           {t.currently}
         </h2>
         <p className="leading-relaxed text-foreground/80">

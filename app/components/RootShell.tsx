@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
 import "../globals.css";
 import { SITE_URL, type Locale } from "../lib/i18n";
 import Navbar from "./Navbar";
@@ -47,13 +46,17 @@ export default function RootShell({
   children: React.ReactNode;
 }) {
   return (
-    <html lang={lang} className={`${GeistSans.variable} ${GeistMono.variable}`}>
-      <body className="flex min-h-screen flex-col bg-background font-sans text-foreground antialiased">
-        <Navbar />
-        <main className="mx-auto w-full max-w-2xl flex-1 px-6 pt-28 sm:pt-32 md:pt-36">
-          {children}
-        </main>
-        <Footer />
+    <html lang={lang} className={GeistSans.variable}>
+      <body className="bg-background font-sans text-foreground antialiased">
+        <div className="mx-auto flex min-h-screen max-w-6xl">
+          <Navbar />
+          <div className="flex min-w-0 flex-1 flex-col pb-14 md:border-l md:border-border md:pb-0">
+            <main className="w-full max-w-2xl flex-1 px-6 pt-12 sm:pt-16 md:px-10">
+              {children}
+            </main>
+            <Footer />
+          </div>
+        </div>
       </body>
     </html>
   );

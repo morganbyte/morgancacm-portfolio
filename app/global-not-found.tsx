@@ -13,7 +13,7 @@ export default function GlobalNotFound() {
   return (
     <RootShell lang="es">
       <header className="mb-12">
-        <p className="mb-2 font-mono text-xs tracking-wider text-muted">404</p>
+        <p className="mb-2 text-xs tracking-wider text-muted">404</p>
         <h1 className="text-2xl font-medium tracking-tight text-foreground sm:text-3xl">
           Esta página no existe.
         </h1>

@@ -4,7 +4,7 @@ import { cn } from "../../lib/utils";
 
 // shadcn/ui Badge, mapped onto the site's own color tokens.
 const badgeVariants = cva(
-  "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border font-mono text-[10px] uppercase tracking-wider transition-colors",
+  "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border text-[10px] uppercase tracking-wider transition-colors",
   {
     variants: {
       variant: {

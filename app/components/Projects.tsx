@@ -1,10 +1,10 @@
 import { projects } from "../data/projects";
 import { localePath, type Locale } from "../lib/i18n";
-import { GithubIcon, GlobeIcon } from "./Icons";
+import { GlobeIcon } from "./Icons";
 
 const copy = {
-  es: { featured: "Destacados", heading: "Proyectos", live: "Sitio", source: "Código", all: "Ver todos los proyectos" },
-  en: { featured: "Featured work", heading: "Projects", live: "Live", source: "Source", all: "View all projects" },
+  es: { featured: "Destacados", heading: "Proyectos", live: "Sitio", all: "Ver todos los proyectos" },
+  en: { featured: "Featured work", heading: "Projects", live: "Live", all: "View all projects" },
 };
 
 type ProjectsProps = {
@@ -27,7 +27,7 @@ export default function Projects({
     <section className="mb-20">
       {showHeader && (
         <div className="mb-6 flex items-baseline justify-between border-b border-border pb-2">
-          <h2 className="font-mono text-xs uppercase tracking-wider text-muted">
+          <h2 className="text-xs uppercase tracking-wider text-muted">
             {limit ? t.featured : t.heading}
           </h2>
         </div>
@@ -40,7 +40,7 @@ export default function Projects({
               <h3 className="text-base font-medium text-foreground">
                 {project.title}
               </h3>
-              <span className="shrink-0 font-mono text-xs text-muted">
+              <span className="shrink-0 text-xs text-muted">
                 {project.year}
               </span>
             </div>
@@ -49,35 +49,15 @@ export default function Projects({
               {project.description[lang]}
             </p>
 
-            <ul className="mt-1 flex flex-wrap gap-1.5">
-              {project.stack.map((tech) => (
-                <li
-                  key={tech}
-                  className="font-mono text-[10px] uppercase tracking-wider text-muted"
-                >
-                  {tech}
-                </li>
-              ))}
-            </ul>
-
             <div className="mt-3 flex flex-wrap gap-2">
               <a
                 href={project.live}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-subtle/30 px-2.5 py-1 font-mono text-xs text-muted transition-colors hover:border-foreground/20 hover:text-foreground"
+                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-subtle/30 px-2.5 py-1 text-xs text-muted transition-colors hover:border-foreground/20 hover:text-foreground"
               >
                 <GlobeIcon className="size-3.5" />
                 {t.live}
-              </a>
-              <a
-                href={project.source}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-subtle/30 px-2.5 py-1 font-mono text-xs text-muted transition-colors hover:border-foreground/20 hover:text-foreground"
-              >
-                <GithubIcon className="size-3.5" />
-                {t.source}
               </a>
             </div>
           </li>
@@ -88,7 +68,7 @@ export default function Projects({
         <div className="mt-6">
           <a
             href={localePath(lang, "/work")}
-            className="group inline-flex items-center gap-1.5 font-mono text-xs text-muted transition-colors hover:text-foreground"
+            className="group inline-flex items-center gap-1.5 text-xs text-muted transition-colors hover:text-foreground"
           >
             {t.all}
             <span

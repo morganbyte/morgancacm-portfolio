@@ -1,19 +1,19 @@
 import { projects, type Project } from "../data/projects";
 import { localePath, type Locale } from "../lib/i18n";
-import { ArrowUpRightIcon, GithubIcon, UsersIcon } from "./Icons";
+import { ArrowUpRightIcon, UsersIcon } from "./Icons";
+import LiveUserCount from "./LiveUserCount";
 import { Badge } from "./ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "./ui/card";
 
 const copy = {
-  es: { heading: "Proyectos", all: "Ver todo", source: "Código" },
-  en: { heading: "Projects", all: "All work", source: "Source" },
+  es: { heading: "Proyectos", all: "Ver todo" },
+  en: { heading: "Projects", all: "All work" },
 };
 
 function ProjectCard({ project, lang }: { project: Project; lang: Locale }) {
@@ -40,7 +40,7 @@ function ProjectCard({ project, lang }: { project: Project; lang: Locale }) {
             </a>
             <ArrowUpRightIcon className="size-3.5 -translate-x-1 text-muted opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:text-foreground group-hover:opacity-100" />
           </CardTitle>
-          <p className="truncate font-mono text-xs text-muted">{host}</p>
+          <p className="truncate text-xs text-muted">{host}</p>
         </div>
 
         <Badge variant="outline">{project.year}</Badge>
@@ -49,31 +49,14 @@ function ProjectCard({ project, lang }: { project: Project; lang: Locale }) {
       <CardContent className="space-y-3">
         <CardDescription>{project.description[lang]}</CardDescription>
         {project.highlight && (
-          <p className="inline-flex items-center gap-1.5 font-mono text-xs text-foreground/80">
+          <p className="inline-flex items-center gap-1.5 text-xs text-foreground/80">
             <UsersIcon className="size-3.5 text-muted" />
             {project.highlight[lang]}
           </p>
         )}
+        {project.liveUsers && <LiveUserCount lang={lang} />}
       </CardContent>
 
-      <CardFooter className="mx-5 flex-wrap justify-between gap-3 border-t border-border px-0 pt-4">
-        <ul className="flex flex-wrap gap-1.5">
-          {project.stack.map((tech) => (
-            <li key={tech}>
-              <Badge variant="secondary">{tech}</Badge>
-            </li>
-          ))}
-        </ul>
-        <a
-          href={project.source}
-          target="_blank"
-          rel="noreferrer"
-          className="relative z-10 ml-auto inline-flex items-center gap-1.5 rounded-md border border-border bg-background/40 px-2.5 py-1 font-mono text-xs text-muted transition-colors hover:border-foreground/20 hover:text-foreground"
-        >
-          <GithubIcon className="size-3.5" />
-          {copy[lang].source}
-        </a>
-      </CardFooter>
     </Card>
   );
 }

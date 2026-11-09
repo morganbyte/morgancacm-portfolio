@@ -19,8 +19,8 @@ const socials = [
 export default function Footer() {
   return (
     <footer className="mt-24 w-full border-t border-border">
-      <div className="mx-auto flex max-w-2xl flex-col items-start justify-between gap-6 px-6 py-8 sm:flex-row sm:items-center">
-        <p className="font-mono text-sm">
+      <div className="flex max-w-2xl flex-col items-start justify-between gap-6 px-6 py-8 md:px-10 sm:flex-row sm:items-center">
+        <p className="text-sm">
           <span className="text-muted">© {new Date().getFullYear()}</span>{" "}
           <span className="font-medium tracking-tight text-foreground">
             morgancacm

@@ -45,7 +45,7 @@ const copy = {
 function PageHeader({ eyebrow, heading }: { eyebrow: string; heading: string }) {
   return (
     <header className="mb-12">
-      <p className="mb-2 font-mono text-xs tracking-wider text-muted">
+      <p className="mb-2 text-xs tracking-wider text-muted">
         {eyebrow}
       </p>
       <h1 className="text-2xl font-medium tracking-tight text-foreground sm:text-3xl">
