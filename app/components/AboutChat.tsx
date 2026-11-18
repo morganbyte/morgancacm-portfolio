@@ -30,6 +30,7 @@ const copy = {
 };
 
 const MAX_CHARS = 600;
+const STORAGE_KEY = "ditta:chat";
 const SPINNER = "·✢✳✶✻✽✻✶✳✢";
 const COMMANDS = ["help", "email", "links", "projects"] as const;
 type Command = (typeof COMMANDS)[number];
@@ -63,6 +64,39 @@ export default function AboutChat() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const busy = status === "submitted" || status === "streaming";
+
+  // The conversation survives a reload but not closing the tab (sessionStorage).
+  // Restored after mount so server and client render the same first frame.
+  const [restored, setRestored] = useState(false);
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? "null");
+      if (saved) {
+        if (Array.isArray(saved.messages)) setMessages(saved.messages);
+        if (Array.isArray(saved.local)) {
+          setLocal(saved.local);
+          nextId.current = Math.max(0, ...saved.local.map((e: LocalEntry) => e.id + 1));
+        }
+        if (Array.isArray(saved.history)) history.current = saved.history;
+      }
+    } catch {
+      // Storage blocked or corrupt: start empty.
+    }
+    setRestored(true);
+  }, [setMessages]);
+
+  // Save once a reply is complete, never a half-streamed one.
+  useEffect(() => {
+    if (!restored || busy) return;
+    try {
+      sessionStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ messages, local, history: history.current }),
+      );
+    } catch {
+      // Storage full or blocked: the chat still works, it just won't survive a reload.
+    }
+  }, [restored, busy, messages, local]);
 
   // The prompt wraps long text onto new lines and grows to fit it.
   useEffect(() => {

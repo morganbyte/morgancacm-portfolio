@@ -14,6 +14,7 @@ to `main`, then tag the release `ditta-vX.Y.Z`.
 - Reads each project's public docs repo on GitHub (Vekipper: morganbyte/vekipper-docs), refreshed hourly with no redeploy.
 - Contact details only when they help (asked, hiring, or missing info); no "contact morgan for more" sign-offs.
 - Knows Andrés Contreras (full name) and Morgan are the same person.
+- The conversation survives a reload (sessionStorage) and is gone when the tab closes.
 - Vekipper knowledge comes from its docs repo; content/projects/vekipper.md removed.
 - Thinking off, so replies never come back empty.
 
