@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.106",
     "@ai-sdk/react": "^4.0.180",
     "ai": "^7.0.176",
     "class-variance-authority": "^0.7.1",
