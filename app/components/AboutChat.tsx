@@ -18,14 +18,16 @@ const copy = {
     email: "copy Morgan's email",
     links: "GitHub, LinkedIn and X",
     projects: "projects and their case studies",
+    retry: "retry the last reply",
     clear: "clear the conversation",
   },
   copied: "copied to clipboard",
   copyFailed: "couldn't copy it, select it by hand",
   unknown: (c: string) => `unknown command: ${c} · try /help`,
+  nothingToRetry: "nothing to retry yet",
   errors: {
     rate: `rate limit reached. try again in a few minutes, or email ${profile.email}`,
-    generic: "connection lost. try again in a moment.",
+    generic: "connection lost. type /retry to try again.",
   },
 };
 
@@ -45,6 +47,8 @@ type LocalEntry = {
   input: string;
   cmd: Command | null;
   copied?: boolean;
+  /** Plain message instead of a command's output (e.g. "nothing to retry"). */
+  note?: string;
 };
 
 export default function AboutChat() {
@@ -54,6 +58,7 @@ export default function AboutChat() {
     messages,
     setMessages,
     sendMessage,
+    regenerate,
     status,
     stop,
     error,
@@ -133,6 +138,22 @@ export default function AboutChat() {
       setMessages([]);
       setLocal([]);
       if (error) clearError();
+      return;
+    }
+    if (name === "retry") {
+      // Re-asks the last question: after an error, a stopped reply, or just
+      // for another answer. The new reply replaces the old one in place.
+      if (busy) return;
+      if (messages.some((m) => m.role === "user")) {
+        if (error) clearError();
+        regenerate();
+      } else {
+        const id = nextId.current++;
+        setLocal((l) => [
+          ...l,
+          { id, at: messages.length, input: raw, cmd: null, note: t.nothingToRetry },
+        ]);
+      }
       return;
     }
     const cmd = (COMMANDS as readonly string[]).includes(name)
@@ -451,7 +472,7 @@ function CommandOutput({ entry }: { entry: LocalEntry }) {
     case "help":
       return (
         <>
-          {[...COMMANDS, "clear" as const].map((c) => (
+          {MENU.map((c) => (
             <span key={c} className="block">
               <span className="inline-block w-24 text-foreground/80">/{c}</span>
               <span className="text-muted">{t.cmds[c]}</span>
@@ -508,6 +529,7 @@ function CommandOutput({ entry }: { entry: LocalEntry }) {
         </>
       );
     default:
+      if (entry.note) return <span className="text-muted">{entry.note}</span>;
       return (
         <span className="text-red-400/90">
           {t.unknown(entry.input.split(/\s+/)[0])}
