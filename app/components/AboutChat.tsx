@@ -410,7 +410,8 @@ function isOneLine(el: HTMLTextAreaElement) {
 }
 
 // Turns URLs, bare domains (github.com/…) and emails in ditta's replies into
-// links, styled like the ones /links prints.
+// links, styled like the ones /links prints. ditta always writes in lowercase:
+// the prose is lowercased here too, links keep their case.
 const LINK_RE =
   /([\w.+-]+@[\w-]+(?:\.[\w-]+)+)|(https?:\/\/[^\s<>"']+|\b(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|dev|app|io|co|me|net|org|ai)(?![\w-])(?:\/[^\s<>"']*)?)/gi;
 
@@ -423,7 +424,7 @@ function Linkified({ text }: { text: string }) {
     const trail = raw.match(/[.,;:!?)\]]+$/)?.[0] ?? "";
     raw = raw.slice(0, raw.length - trail.length);
     const start = m.index;
-    if (start > last) out.push(text.slice(last, start));
+    if (start > last) out.push(text.slice(last, start).toLowerCase());
     const href = m[1]
       ? `mailto:${raw}`
       : /^https?:\/\//i.test(raw)
@@ -441,7 +442,7 @@ function Linkified({ text }: { text: string }) {
     );
     last = start + raw.length;
   }
-  if (last < text.length) out.push(text.slice(last));
+  if (last < text.length) out.push(text.slice(last).toLowerCase());
   return <>{out}</>;
 }
 

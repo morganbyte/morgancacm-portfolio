@@ -7,6 +7,8 @@ to `main`, then tag the release `ditta-vX.Y.Z`.
 ## 1.1.0 (unreleased)
 
 - Model served by OpenCode (`claude-haiku-5-5`) instead of Vercel AI Gateway. Needs `OPENCODE_API_KEY`.
+- Chat: the prompt wraps long text, no visible scrollbar, URLs and emails in replies are links.
+- Replies are always lowercase (links keep their case).
 
 ## 1.0.0
 
