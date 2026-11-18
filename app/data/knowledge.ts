@@ -69,7 +69,7 @@ function cleanMarkdown(md: string): string {
 
 export async function buildKnowledge(): Promise<string> {
   const lines: string[] = [
-    `Name: ${profile.name} (handle: ${profile.handle})`,
+    `Name: ${profile.name} (handle: ${profile.handle}). Full name: ${profile.fullName}. "${profile.fullName}" and "${profile.name}" are the same person: docs that mention ${profile.fullName} are about ${profile.name}.`,
     `Role: ${profile.role}`,
     `Pitch: ${profile.tagline}`,
     `Availability: ${profile.availability}`,
