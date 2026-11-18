@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { about } from "./about";
 import { notes } from "./notes";
 import { profile } from "./profile";
@@ -8,7 +10,26 @@ import { projects } from "./projects";
 //   - who Morgan is, how Morgan works → app/data/about.ts
 //   - contact, links, stack           → app/data/profile.ts
 //   - projects and case studies       → app/data/projects.ts (also the /work/<slug> pages)
+//   - everything about one project    → content/projects/<slug>.md (Morgan writes it, in Spanish)
 //   - anything else                   → app/data/notes.ts
+
+// content/projects/<slug>.md without its <!-- notes --> and empty sections.
+// Returns "" when the file doesn't exist or has nothing filled in yet.
+function projectNotes(slug: string): string {
+  let md: string;
+  try {
+    md = readFileSync(path.join(process.cwd(), "content/projects", `${slug}.md`), "utf8");
+  } catch {
+    return "";
+  }
+  const sections = md
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .split(/^(?=#{1,6} )/m)
+    .map((s) => s.trim())
+    .filter((s) => s && s.includes("\n")); // heading + at least one line of content
+  return sections.join("\n\n");
+}
+
 export function buildKnowledge(): string {
   const lines: string[] = [
     `Name: ${profile.name} (handle: ${profile.handle})`,
@@ -30,10 +51,19 @@ export function buildKnowledge(): string {
 
   for (const p of projects) {
     lines.push(`## ${p.title}${p.year ? ` (${p.year})` : ""}`);
-    lines.push(p.summary);
     lines.push(`Detail page on this site: /work/${p.slug}`);
     if (p.live) lines.push(`Live: ${p.live}`);
     if (p.repo) lines.push(`Code: ${p.repo}`);
+
+    // Once Morgan has written content/projects/<slug>.md, it's the only source
+    // for the project: mixing it with older lines makes the model pick wrong.
+    const notesMd = projectNotes(p.slug);
+    if (notesMd) {
+      lines.push(`Written by ${profile.name} (in Spanish):`, notesMd, "");
+      continue;
+    }
+
+    lines.push(p.summary);
     if (p.stack.length) lines.push(`Stack: ${p.stack.join(", ")}`);
     const cs = p.caseStudy;
     if (cs.problem) lines.push(`Problem: ${cs.problem}`);

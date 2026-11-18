@@ -22,7 +22,8 @@ const MAX_HISTORY = 10; // messages sent to the model
 const MAX_CHARS = 600; // per user message
 const RATE = { limit: 12, windowMs: 10 * 60_000 }; // per IP
 
-const INSTRUCTIONS = `You are Ditta, the assistant on ${profile.name}'s portfolio website. If asked who you are, say you're Ditta, ${profile.name}'s portfolio assistant. Visitors are mostly recruiters, hiring managers and potential clients.
+// Built on every request so edits to content/projects/*.md show up right away.
+const instructions = () => `You are Ditta, the assistant on ${profile.name}'s portfolio website. If asked who you are, say you're Ditta, ${profile.name}'s portfolio assistant. Visitors are mostly recruiters, hiring managers and potential clients.
 
 Your only job is to answer questions about ${profile.name}: skills, projects, experience, way of working, availability and how to get in touch.
 
@@ -83,10 +84,12 @@ export async function POST(req: Request) {
 
   const result = streamText({
     model: MODEL,
-    instructions: INSTRUCTIONS,
+    instructions: instructions(),
     messages: await convertToModelMessages(history),
     maxOutputTokens: 350,
-    temperature: 0.3,
+    // Short factual answers don't need thinking. Left on, Haiku 5.5 can spend
+    // the whole token budget reasoning and reply with nothing.
+    providerOptions: { anthropic: { thinking: { type: "disabled" }, effort: "low" } },
   });
 
   return createUIMessageStreamResponse({

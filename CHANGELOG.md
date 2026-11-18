@@ -9,6 +9,9 @@ to `main`, then tag the release `ditta-vX.Y.Z`.
 - Model served by OpenCode (`claude-haiku-5-5`) instead of Vercel AI Gateway. Needs `OPENCODE_API_KEY`.
 - Chat: the prompt wraps long text, no visible scrollbar, URLs and emails in replies are links.
 - Replies are always lowercase (links keep their case).
+- One-screen portfolio: ditta links each project's /work/<slug> page.
+- Project knowledge from content/projects/<slug>.md, written by Morgan.
+- Thinking off, so replies never come back empty.
 
 ## 1.0.0
 

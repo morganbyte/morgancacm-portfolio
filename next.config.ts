@@ -13,6 +13,8 @@ function appEnv() {
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   env: { NEXT_PUBLIC_APP_ENV: appEnv() },
+  // ditta reads content/projects/*.md at runtime (app/data/knowledge.ts).
+  outputFileTracingIncludes: { "/api/chat": ["./content/**/*.md"] },
   // The site is English-only. Old /en and /es links land on the same page.
   async redirects() {
     return [
