@@ -34,6 +34,8 @@ const STORAGE_KEY = "ditta:chat";
 const SPINNER = "·✢✳✶✻✽✻✶✳✢";
 const COMMANDS = ["help", "email", "links", "projects"] as const;
 type Command = (typeof COMMANDS)[number];
+// Everything the autocomplete offers, in /help order.
+const MENU = Object.keys(copy.cmds) as (keyof typeof copy.cmds)[];
 
 // Output of a slash command. Rendered in the transcript, never sent to the model.
 // `at` is how many chat messages existed when it ran, so it sorts in between them.
@@ -64,6 +66,18 @@ export default function AboutChat() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const busy = status === "submitted" || status === "streaming";
+
+  // Slash-command autocomplete: typing "/" lists the commands, filtered as you
+  // type. ↑↓ pick, Tab completes, Enter runs, Esc closes. It opens only on
+  // typing, so recalling "/email" from history doesn't hijack the arrows.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [sel, setSel] = useState(0);
+  const matches =
+    menuOpen && /^\/\S*$/.test(input)
+      ? MENU.filter((c) => c.startsWith(input.slice(1).toLowerCase()))
+      : [];
+  const showMenu = matches.length > 0;
+  const selected = matches[Math.min(sel, matches.length - 1)];
 
   // The conversation survives a reload but not closing the tab (sessionStorage).
   // Restored after mount so server and client render the same first frame.
@@ -154,6 +168,7 @@ export default function AboutChat() {
     if (history.current.at(-1) !== q) history.current.push(q);
     historyPos.current = -1;
     setInput("");
+    setMenuOpen(false);
     inputRef.current?.focus();
   };
 
@@ -170,10 +185,35 @@ export default function AboutChat() {
     }
     historyPos.current = pos;
     setInput(h[pos]);
+    setMenuOpen(false);
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     const el = e.currentTarget;
+    if (showMenu && !e.nativeEvent.isComposing) {
+      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+        e.preventDefault();
+        const n = matches.length;
+        setSel((i) => (Math.min(i, n - 1) + (e.key === "ArrowUp" ? n - 1 : 1)) % n);
+        return;
+      }
+      if (e.key === "Tab") {
+        e.preventDefault();
+        setInput(`/${selected}`);
+        setSel(0);
+        return;
+      }
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        ask(`/${selected}`);
+        return;
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setMenuOpen(false);
+        return;
+      }
+    }
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
       // Enter sends, like a one-line prompt; the text only wraps visually.
       e.preventDefault();
@@ -312,18 +352,55 @@ export default function AboutChat() {
           ref={inputRef}
           rows={1}
           value={input}
-          onChange={(e) => setInput(e.currentTarget.value.replace(/\n/g, " "))}
+          onChange={(e) => {
+            const v = e.currentTarget.value.replace(/\n/g, " ");
+            setInput(v);
+            setMenuOpen(v.startsWith("/"));
+            setSel(0);
+          }}
           onKeyDown={onKeyDown}
           placeholder={t.placeholder}
           maxLength={MAX_CHARS}
           aria-label={t.placeholder}
           autoComplete="off"
+          role="combobox"
+          aria-expanded={showMenu}
+          aria-controls="ditta-commands"
+          aria-autocomplete="list"
+          aria-activedescendant={showMenu ? `ditta-cmd-${selected}` : undefined}
           spellCheck={false}
           className="chat-scroll max-h-40 min-w-0 flex-1 resize-none overflow-y-auto break-words bg-transparent text-foreground caret-emerald-400 placeholder:text-foreground/25 focus:outline-none"
         />
       </form>
 
-      {/* Hints */}
+      {/* Command autocomplete, in place of the hints */}
+      {showMenu ? (
+        <ul id="ditta-commands" role="listbox" className="px-1 pt-1.5 text-[12px]">
+          {matches.map((c) => (
+            <li
+              key={c}
+              id={`ditta-cmd-${c}`}
+              role="option"
+              aria-selected={c === selected}
+              onMouseDown={(e) => {
+                e.preventDefault(); // keep focus in the prompt
+                ask(`/${c}`);
+              }}
+              // Move, not enter: a menu opening under a still cursor keeps its pick.
+              onMouseMove={() => setSel(matches.indexOf(c))}
+              className={`flex cursor-pointer gap-3 px-2 ${
+                c === selected ? "text-emerald-400" : "text-foreground/40"
+              }`}
+            >
+              <span className="w-20 shrink-0">/{c}</span>
+              <span className={c === selected ? "text-foreground/70" : ""}>{copy.cmds[c]}</span>
+            </li>
+          ))}
+          <li aria-hidden className="px-2 pt-1 text-[11px] text-foreground/30">
+            ↑↓ select · tab complete · ↵ run · esc close
+          </li>
+        </ul>
+      ) : (
       <p className="flex justify-between gap-3 px-1 pt-1.5 text-[11px] text-foreground/30">
         <span className="truncate">
           {busy ? (
@@ -337,6 +414,7 @@ export default function AboutChat() {
           )}
         </span>
       </p>
+      )}
     </section>
   );
 }
