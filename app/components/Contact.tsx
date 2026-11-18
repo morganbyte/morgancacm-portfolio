@@ -1,19 +1,12 @@
 import { profile } from "../data/profile";
-import type { Locale } from "../lib/i18n";
 
 const copy = {
-  en: {
-    heading: "Get in touch",
-    body: "I'm looking for remote, full-time roles on product teams, backend or full-stack. The fastest way to reach me is email; I reply within a day.",
-  },
-  es: {
-    heading: "Contacto",
-    body: "Busco roles remotos de tiempo completo en equipos de producto, backend o full-stack. La forma más rápida de contactarme es por correo; respondo en menos de un día.",
-  },
+  heading: "Get in touch",
+  body: "I'm looking for remote, full-time roles on product teams, backend or full-stack. The fastest way to reach me is email; I reply within a day.",
 };
 
-export default function Contact({ lang }: { lang: Locale }) {
-  const t = copy[lang];
+export default function Contact() {
+  const t = copy;
   return (
     <section className="mb-8">
       <h2 className="mb-3 text-base font-medium text-foreground">{t.heading}</h2>

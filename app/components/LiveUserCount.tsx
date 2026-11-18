@@ -1,21 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Locale } from "../lib/i18n";
 import { UsersIcon } from "./Icons";
 
 const POLL_MS = 30_000;
 
-const copy = {
-  es: { one: "usuario real", many: "usuarios reales", live: "En vivo" },
-  en: { one: "real user", many: "real users", live: "Live" },
-};
+const copy = { one: "real user", many: "real users", live: "Live" };
 
 // Vekipper's real user count, refreshed every 30 s while the tab is visible.
 // Renders nothing until a number arrives, or if the stats endpoint is down.
-export default function LiveUserCount({ lang }: { lang: Locale }) {
+export default function LiveUserCount() {
   const [users, setUsers] = useState<number | null>(null);
-  const t = copy[lang];
+  const t = copy;
 
   useEffect(() => {
     let cancelled = false;
@@ -53,7 +49,7 @@ export default function LiveUserCount({ lang }: { lang: Locale }) {
   return (
     <p className="inline-flex items-center gap-1.5 text-xs text-foreground/80" aria-live="polite">
       <UsersIcon className="size-3.5 text-muted" />
-      <span className="tabular-nums">{users.toLocaleString(lang)}</span>{" "}
+      <span className="tabular-nums">{users.toLocaleString("en")}</span>{" "}
       {users === 1 ? t.one : t.many}
       <span className="ml-1 inline-flex items-center gap-1 text-muted" title={t.live}>
         <span className="relative flex size-1.5">

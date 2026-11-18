@@ -1,22 +1,11 @@
 import { ImageResponse } from "next/og";
-import type { Locale } from "../lib/i18n";
-
 import { profile } from "../data/profile";
-
-const copy = {
-  en: { alt: `${profile.name} | ${profile.role.en}` },
-  es: { alt: `${profile.name} | ${profile.role.es}` },
-};
-
 
 export const ogSize = { width: 1200, height: 630 };
 
-export function ogAlt(lang: Locale) {
-  return copy[lang].alt;
-}
+export const ogAlt = `${profile.name} | ${profile.role}`;
 
-export function ogImage(lang: Locale) {
-  const t = copy[lang];
+export function ogImage() {
   return new ImageResponse(
     (
       <div
@@ -58,7 +47,7 @@ export function ogImage(lang: Locale) {
               letterSpacing: -1.5,
             }}
           >
-            {profile.tagline[lang]}
+            {profile.tagline}
           </div>
           <div
             style={{
@@ -66,7 +55,7 @@ export function ogImage(lang: Locale) {
               color: "#a3a3a3",
             }}
           >
-            {t.alt}
+            {ogAlt}
           </div>
         </div>
       </div>

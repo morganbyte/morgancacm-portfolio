@@ -1,7 +1,7 @@
 import { AboutPage, aboutMetadata } from "@/app/components/Pages";
 
-export const metadata = aboutMetadata("es");
+export const metadata = aboutMetadata;
 
 export default function Page() {
-  return <AboutPage lang="es" />;
+  return <AboutPage />;
 }

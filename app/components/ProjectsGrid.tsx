@@ -1,18 +1,14 @@
 import Link from "next/link";
 import { projects, type Project } from "../data/projects";
-import { localePath, type Locale } from "../lib/i18n";
 import { ArrowUpRightIcon } from "./Icons";
 import LiveUserCount from "./LiveUserCount";
 import { Badge } from "./ui/badge";
 
-const copy = {
-  en: { heading: "Work", all: "All work", read: "Read case study", visit: "Visit" },
-  es: { heading: "Proyectos", all: "Ver todos", read: "Ver caso de estudio", visit: "Visitar" },
-};
+const copy = { heading: "Work", all: "All work", read: "Read case study", visit: "Visit" };
 
-function ProjectCard({ project, lang }: { project: Project; lang: Locale }) {
-  const t = copy[lang];
-  const href = localePath(lang, `/work/${project.slug}`);
+function ProjectCard({ project }: { project: Project }) {
+  const t = copy;
+  const href = `/work/${project.slug}`;
 
   return (
     <article
@@ -38,9 +34,9 @@ function ProjectCard({ project, lang }: { project: Project; lang: Locale }) {
         {project.year && <Badge variant="outline">{project.year}</Badge>}
       </div>
 
-      <p className="text-sm leading-relaxed text-foreground/75">{project.summary[lang]}</p>
+      <p className="text-sm leading-relaxed text-foreground/75">{project.summary}</p>
 
-      {project.liveUsers && <LiveUserCount lang={lang} />}
+      {project.liveUsers && <LiveUserCount />}
 
       {project.stack.length > 0 && (
         <ul className="flex flex-wrap gap-1.5">
@@ -76,32 +72,32 @@ function ProjectCard({ project, lang }: { project: Project; lang: Locale }) {
   );
 }
 
-export function ProjectList({ lang }: { lang: Locale }) {
+export function ProjectList() {
   return (
     <div className="flex flex-col gap-3">
       {projects.map((project) => (
-        <ProjectCard key={project.slug} project={project} lang={lang} />
+        <ProjectCard key={project.slug} project={project} />
       ))}
     </div>
   );
 }
 
-export default function ProjectsGrid({ lang }: { lang: Locale }) {
-  const t = copy[lang];
+export default function ProjectsGrid() {
+  const t = copy;
 
   return (
     <section className="mb-20">
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-base font-medium text-foreground">{t.heading}</h2>
         <Link
-          href={localePath(lang, "/work")}
+          href={"/work"}
           className="group inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-foreground"
         >
           {t.all}
           <span aria-hidden className="transition-transform group-hover:translate-x-0.5">→</span>
         </Link>
       </div>
-      <ProjectList lang={lang} />
+      <ProjectList />
     </section>
   );
 }

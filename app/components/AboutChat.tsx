@@ -5,74 +5,32 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { profile } from "../data/profile";
 import { projects } from "../data/projects";
-import { localePath, type Locale } from "../lib/i18n";
 
 const copy = {
-  en: {
-    title: "ask-morgan",
-    online: "online",
-    session: "session started",
-    intro: "Ask me anything about Morgan: projects, stack, way of working, availability.",
-    scope: "I only answer questions about Morgan.",
-    you: "you",
-    bot: "morgan.ai",
-    thinking: "thinking",
-    placeholder: "type a question…",
-    hintSend: "send",
-    hintStop: "stop",
-    hintPick: "pick",
-    suggestions: ["What is Vekipper?", "What's Morgan's stack?", "Is Morgan open to remote roles?"],
-    sys: "sys",
-    helpHint: "type /help to see commands",
-    cmds: {
-      help: "show this list",
-      email: "copy Morgan's email",
-      links: "GitHub, LinkedIn and X",
-      projects: "projects and their case studies",
-      clear: "clear the conversation",
-    },
-    copied: "copied to clipboard ✓",
-    copyFailed: "couldn't copy it, select it by hand",
-    unknown: (c: string) => `unknown command: ${c}. type /help`,
-    errors: {
-      rate: `rate limit reached. try again in a few minutes, or email ${profile.email}`,
-      generic: "connection lost. try again in a moment.",
-    },
+  label: "chat with ditta",
+  intro:
+    "i'm morgan's AI. ask me anything about morgan's work, or let me set up a call or meeting with morgan.",
+  thinking: "thinking",
+  placeholder: "/help for commands",
+  hints: { send: "send", stop: "stop", history: "history" },
+  cmds: {
+    help: "show this list",
+    email: "copy Morgan's email",
+    links: "GitHub, LinkedIn and X",
+    projects: "projects and their case studies",
+    clear: "clear the conversation",
   },
-  es: {
-    title: "pregunta-a-morgan",
-    online: "en línea",
-    session: "sesión iniciada",
-    intro: "Pregúntame lo que quieras sobre Morgan: proyectos, stack, forma de trabajar, disponibilidad.",
-    scope: "Solo respondo preguntas sobre Morgan.",
-    you: "tú",
-    bot: "morgan.ai",
-    thinking: "pensando",
-    placeholder: "escribe una pregunta…",
-    hintSend: "enviar",
-    hintStop: "detener",
-    hintPick: "elegir",
-    suggestions: ["¿Qué es Vekipper?", "¿Qué stack usa Morgan?", "¿Morgan busca trabajo remoto?"],
-    sys: "sys",
-    helpHint: "escribe /help para ver los comandos",
-    cmds: {
-      help: "muestra esta lista",
-      email: "copia el correo de Morgan",
-      links: "GitHub, LinkedIn y X",
-      projects: "proyectos y sus case studies",
-      clear: "limpia la conversación",
-    },
-    copied: "copiado al portapapeles ✓",
-    copyFailed: "no se pudo copiar, selecciónalo a mano",
-    unknown: (c: string) => `comando desconocido: ${c}. escribe /help`,
-    errors: {
-      rate: `límite alcanzado. intenta en unos minutos o escribe a ${profile.email}`,
-      generic: "se perdió la conexión. intenta de nuevo en un momento.",
-    },
+  copied: "copied to clipboard",
+  copyFailed: "couldn't copy it, select it by hand",
+  unknown: (c: string) => `unknown command: ${c} · try /help`,
+  errors: {
+    rate: `rate limit reached. try again in a few minutes, or email ${profile.email}`,
+    generic: "connection lost. try again in a moment.",
   },
 };
 
 const MAX_CHARS = 600;
+const SPINNER = "·✢✳✶✻✽✻✶✳✢";
 const COMMANDS = ["help", "email", "links", "projects"] as const;
 type Command = (typeof COMMANDS)[number];
 
@@ -85,13 +43,19 @@ type LocalEntry = {
   cmd: Command | null;
   copied?: boolean;
 };
-const SPINNER = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏";
 
-export default function AboutChat({ lang }: { lang: Locale }) {
-  const t = copy[lang];
+export default function AboutChat() {
+  const t = copy;
   const [input, setInput] = useState("");
-  const [startedAt, setStartedAt] = useState("");
-  const { messages, setMessages, sendMessage, status, stop, error, clearError } = useChat();
+  const {
+    messages,
+    setMessages,
+    sendMessage,
+    status,
+    stop,
+    error,
+    clearError,
+  } = useChat();
   const [local, setLocal] = useState<LocalEntry[]>([]);
   const history = useRef<string[]>([]);
   const historyPos = useRef(-1); // -1 = not browsing history
@@ -99,13 +63,6 @@ export default function AboutChat({ lang }: { lang: Locale }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const busy = status === "submitted" || status === "streaming";
-
-  // Client-only, so server and browser render the same markup.
-  useEffect(() => {
-    setStartedAt(
-      new Date().toLocaleTimeString(lang, { hour: "2-digit", minute: "2-digit", hour12: false }),
-    );
-  }, [lang]);
 
   // Keep the newest line in view while it streams in.
   useEffect(() => {
@@ -122,7 +79,9 @@ export default function AboutChat({ lang }: { lang: Locale }) {
       if (error) clearError();
       return;
     }
-    const cmd = (COMMANDS as readonly string[]).includes(name) ? (name as Command) : null;
+    const cmd = (COMMANDS as readonly string[]).includes(name)
+      ? (name as Command)
+      : null;
     const id = nextId.current++;
     setLocal((l) => [...l, { id, at: messages.length, input: raw, cmd }]);
     if (cmd === "email") {
@@ -132,7 +91,11 @@ export default function AboutChat({ lang }: { lang: Locale }) {
           () => true,
           () => false,
         )
-        .then((ok) => setLocal((l) => l.map((e) => (e.id === id ? { ...e, copied: ok } : e))));
+        .then((ok) =>
+          setLocal((l) =>
+            l.map((e) => (e.id === id ? { ...e, copied: ok } : e)),
+          ),
+        );
     }
   };
 
@@ -174,9 +137,6 @@ export default function AboutChat({ lang }: { lang: Locale }) {
     } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
       e.preventDefault();
       browseHistory(e.key === "ArrowUp" ? -1 : 1);
-    } else if (!input && messages.length === 0 && /^[1-3]$/.test(e.key)) {
-      e.preventDefault();
-      ask(t.suggestions[Number(e.key) - 1]);
     }
   };
 
@@ -187,101 +147,98 @@ export default function AboutChat({ lang }: { lang: Locale }) {
     : null;
 
   const last = messages[messages.length - 1];
-  const streamingId = status === "streaming" && last?.role === "assistant" ? last.id : null;
+  const streamingId =
+    status === "streaming" && last?.role === "assistant" ? last.id : null;
+
+  const timeline = [
+    ...messages.map((m, i) => ({ kind: "chat" as const, m, order: i + 0.5 })),
+    ...local.map((e) => ({ kind: "local" as const, e, order: e.at })),
+  ].sort((a, b) => a.order - b.order);
 
   return (
     <section
-      aria-label={t.title}
-      className="terminal relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-white/[0.08] font-mono text-[13px] leading-relaxed"
+      aria-label={t.label}
+      className="flex h-full w-full flex-col font-mono text-[13px] leading-[1.65] text-foreground/90"
       onClick={(e) => {
         // Clicking anywhere in the window focuses the prompt, like a terminal.
         if ((e.target as HTMLElement).closest("button, a, input")) return;
         if (!window.getSelection()?.toString()) inputRef.current?.focus();
       }}
     >
-      {/* Title bar */}
-      <header className="flex items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-2.5 text-[11px] uppercase tracking-[0.14em] text-muted">
-        <span className="flex items-center gap-2">
-          <span aria-hidden className="text-foreground/30">
-            ◆
-          </span>
-          {t.title}
-        </span>
-        <span className="flex items-center gap-2">
-          <span className="relative flex size-1.5">
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400/70 motion-reduce:hidden" />
-            <span className="relative inline-flex size-1.5 rounded-full bg-emerald-400" />
-          </span>
-          {t.online}
-        </span>
-      </header>
-
       {/* Transcript */}
-      <div ref={scrollRef} role="log" aria-live="polite" className="relative flex-1 overflow-y-auto px-4 py-5">
-        <Rule label={startedAt ? `${t.session} · ${startedAt}` : t.session} />
+      <div
+        ref={scrollRef}
+        role="log"
+        aria-live="polite"
+        className="chat-scroll flex-1 overflow-y-auto pb-3"
+      >
+        <div className="mb-3 rounded-md border border-white/[0.08] px-3 py-2">
+          <p>
+            <span className="text-emerald-400">✻</span>{" "}
+            <span className="font-semibold">ditta</span>
+          </p>
+          <p className="text-muted">{t.intro}</p>
+        </div>
 
-        <Line who={t.bot} accent>
-          {t.intro}
-          <span className="mt-1 block text-muted">{t.scope}</span>
-          <span className="block text-muted">{t.helpHint}</span>
-        </Line>
-
-        {messages.length === 0 && local.length === 0 && (
-          <ol className="mt-4 space-y-1 pl-[5.5rem] max-sm:pl-0">
-            {t.suggestions.map((s, i) => (
-              <li key={s}>
-                <button
-                  type="button"
-                  onClick={() => ask(s)}
-                  className="group flex w-full items-baseline gap-3 rounded-md px-2 py-1 text-left text-foreground/70 transition-colors hover:bg-white/[0.04] hover:text-foreground"
-                >
-                  <span className="text-muted transition-colors group-hover:text-emerald-400">[{i + 1}]</span>
-                  {s}
-                </button>
-              </li>
-            ))}
-          </ol>
-        )}
-
-        {[...messages.map((m, i) => ({ kind: "chat" as const, m, i })), ...local.map((e) => ({ kind: "local" as const, e }))]
-          .sort((a, b) => (a.kind === "chat" ? a.i + 0.5 : a.e.at) - (b.kind === "chat" ? b.i + 0.5 : b.e.at))
-          .map((item) => {
-            if (item.kind === "local") {
-              const { e } = item;
-              return (
-                <div key={`l${e.id}`}>
-                  <Line who={t.you} muted>
-                    {e.input}
-                  </Line>
-                  <Line who={t.sys}>
-                    <CommandOutput entry={e} lang={lang} />
-                  </Line>
-                </div>
-              );
-            }
-            const { m } = item;
-            const text = m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
-            if (!text) return null;
-            const user = m.role === "user";
+        {timeline.map((item) => {
+          if (item.kind === "local") {
+            const { e } = item;
             return (
-              <Line key={m.id} who={user ? t.you : t.bot} accent={!user} muted={user}>
-                {text}
-                {m.id === streamingId && <Caret />}
-              </Line>
+              <div key={`l${e.id}`} className="mt-3">
+                <Row
+                  mark=">"
+                  markClass="text-foreground/30"
+                  className="text-muted"
+                >
+                  {e.input}
+                </Row>
+                <Row mark="⎿" markClass="pl-1 text-foreground/30">
+                  <CommandOutput entry={e} />
+                </Row>
+              </div>
             );
-          })}
+          }
+          const { m } = item;
+          const text = m.parts
+            .map((p) => (p.type === "text" ? p.text : ""))
+            .join("");
+          if (!text) return null;
+          return m.role === "user" ? (
+            <Row
+              key={m.id}
+              mark=">"
+              markClass="text-foreground/30"
+              className="mt-3 text-muted"
+            >
+              {text}
+            </Row>
+          ) : (
+            <Row
+              key={m.id}
+              mark="⏺"
+              markClass="text-foreground"
+              className="mt-2"
+            >
+              {text}
+              {m.id === streamingId && <Caret />}
+            </Row>
+          );
+        })}
 
         {status === "submitted" && (
-          <Line who={t.bot} accent>
-            <Spinner /> <span className="text-muted">{t.thinking}…</span>
-          </Line>
+          <Row mark={<Spinner />} className="mt-2 text-muted">
+            {t.thinking}… <span className="text-foreground/30">(esc)</span>
+          </Row>
         )}
 
         {errorText && (
-          <p className="mt-4 text-red-400/90">
-            <span aria-hidden>! </span>
+          <Row
+            mark="⎿"
+            markClass="pl-1 text-foreground/30"
+            className="mt-1 text-red-400/90"
+          >
             {errorText}
-          </p>
+          </Row>
         )}
       </div>
 
@@ -291,10 +248,13 @@ export default function AboutChat({ lang }: { lang: Locale }) {
           e.preventDefault();
           ask(input);
         }}
-        className="flex items-center gap-3 border-t border-white/[0.06] px-4 py-3"
+        className="flex items-center gap-2 rounded-md border border-white/[0.12] px-3 py-2 transition-colors focus-within:border-white/25"
       >
-        <span aria-hidden className={busy ? "text-muted" : "text-emerald-400"}>
-          ›
+        <span
+          aria-hidden
+          className={busy ? "text-foreground/30" : "text-foreground/70"}
+        >
+          &gt;
         </span>
         <input
           ref={inputRef}
@@ -308,78 +268,61 @@ export default function AboutChat({ lang }: { lang: Locale }) {
           spellCheck={false}
           className="min-w-0 flex-1 bg-transparent text-foreground caret-emerald-400 placeholder:text-foreground/25 focus:outline-none"
         />
-        {busy ? (
-          <button
-            type="button"
-            onClick={() => stop()}
-            className="rounded border border-white/10 px-2 py-0.5 text-[11px] uppercase tracking-wider text-muted transition-colors hover:border-white/20 hover:text-foreground"
-          >
-            esc
-          </button>
-        ) : (
-          <button
-            type="submit"
-            disabled={!input.trim()}
-            aria-label={t.hintSend}
-            className="rounded border border-white/10 px-2 py-0.5 text-[11px] text-muted transition-colors enabled:hover:border-emerald-400/40 enabled:hover:text-emerald-400 disabled:opacity-30"
-          >
-            ↵
-          </button>
-        )}
       </form>
 
-      {/* Status bar */}
-      <footer className="flex items-center justify-between gap-3 border-t border-white/[0.06] bg-white/[0.015] px-4 py-1.5 text-[10px] uppercase tracking-[0.14em] text-foreground/30">
-        <span className="flex gap-3">
-          <span>↵ {t.hintSend}</span>
-          <span>esc {t.hintStop}</span>
-          <span className="max-sm:hidden">/help</span>
-          {messages.length === 0 && local.length === 0 && <span className="max-sm:hidden">1–3 {t.hintPick}</span>}
+      {/* Hints */}
+      <p className="flex justify-between gap-3 px-1 pt-1.5 text-[11px] text-foreground/30">
+        <span className="truncate">
+          {busy ? (
+            <>esc {t.hints.stop}</>
+          ) : (
+            <>
+              ↵ {t.hints.send} ·{" "}
+              <span className="max-sm:hidden">↑↓ {t.hints.history} · </span>
+              /help
+            </>
+          )}
         </span>
-        <span className="truncate">claude-haiku-5.5</span>
-      </footer>
+      </p>
     </section>
   );
 }
 
-function Line({
-  who,
-  accent,
-  muted,
+function Row({
+  mark,
+  markClass = "",
+  className = "",
   children,
 }: {
-  who: string;
-  accent?: boolean;
-  muted?: boolean;
+  mark: React.ReactNode;
+  markClass?: string;
+  className?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="mt-4 flex gap-3 max-sm:flex-col max-sm:gap-0.5">
-      <span
-        className={`w-[4.75rem] shrink-0 text-right text-[11px] uppercase leading-[1.9] tracking-[0.12em] max-sm:text-left ${
-          accent ? "text-emerald-400/80" : "text-muted"
-        }`}
-      >
-        {who}
+    <div className={`flex gap-2 ${className}`}>
+      <span aria-hidden className={`w-4 shrink-0 select-none ${markClass}`}>
+        {mark}
       </span>
-      <p className={`min-w-0 flex-1 whitespace-pre-wrap break-words ${muted ? "text-foreground/60" : "text-foreground/90"}`}>
+      <p className="min-w-0 flex-1 whitespace-pre-wrap break-words">
         {children}
       </p>
     </div>
   );
 }
 
-const linkClass = "text-emerald-400/90 underline decoration-emerald-400/30 underline-offset-2 hover:decoration-emerald-400";
+const linkClass =
+  "text-foreground underline decoration-white/20 underline-offset-2 hover:decoration-white/60";
 
-function CommandOutput({ entry, lang }: { entry: LocalEntry; lang: Locale }) {
-  const t = copy[lang];
+function CommandOutput({ entry }: { entry: LocalEntry }) {
+  const t = copy;
   switch (entry.cmd) {
     case "help":
       return (
         <>
           {[...COMMANDS, "clear" as const].map((c) => (
             <span key={c} className="block">
-              <span className="inline-block w-24 text-foreground">/{c}</span>
+              <span className="inline-block w-24 text-foreground/80">/{c}</span>
               <span className="text-muted">{t.cmds[c]}</span>
             </span>
           ))}
@@ -392,7 +335,10 @@ function CommandOutput({ entry, lang }: { entry: LocalEntry; lang: Locale }) {
             {profile.email}
           </a>
           {entry.copied !== undefined && (
-            <span className="block text-muted">{entry.copied ? t.copied : t.copyFailed}</span>
+            <span className="text-muted">
+              {" "}
+              · {entry.copied ? t.copied : t.copyFailed}
+            </span>
           )}
         </>
       );
@@ -402,7 +348,12 @@ function CommandOutput({ entry, lang }: { entry: LocalEntry; lang: Locale }) {
           {Object.entries(profile.links).map(([name, url]) => (
             <span key={name} className="block">
               <span className="inline-block w-24 text-muted">{name}</span>
-              <a href={url} target="_blank" rel="noopener noreferrer" className={linkClass}>
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={linkClass}
+              >
                 {url.replace(/^https:\/\/(www\.)?/, "")}
               </a>
             </span>
@@ -414,34 +365,31 @@ function CommandOutput({ entry, lang }: { entry: LocalEntry; lang: Locale }) {
         <>
           {projects.map((p) => (
             <span key={p.slug} className="block">
-              <Link href={localePath(lang, `/work/${p.slug}`)} className={linkClass}>
+              <Link
+                href={`/work/${p.slug}`}
+                className={linkClass}
+              >
                 {p.title}
               </Link>
-              <span className="text-muted"> · {p.summary[lang]}</span>
+              <span className="text-muted"> · {p.summary}</span>
             </span>
           ))}
         </>
       );
     default:
-      return <span className="text-red-400/90">{t.unknown(entry.input.split(/\s+/)[0])}</span>;
+      return (
+        <span className="text-red-400/90">
+          {t.unknown(entry.input.split(/\s+/)[0])}
+        </span>
+      );
   }
-}
-
-function Rule({ label }: { label: string }) {
-  return (
-    <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.18em] text-foreground/25">
-      <span className="h-px flex-1 bg-white/[0.06]" />
-      {label}
-      <span className="h-px flex-1 bg-white/[0.06]" />
-    </div>
-  );
 }
 
 function Caret() {
   return (
     <span
       aria-hidden
-      className="ml-0.5 inline-block h-[1.05em] w-[0.55em] translate-y-[0.18em] animate-[blink_1s_steps(1)_infinite] bg-emerald-400/80 motion-reduce:animate-none"
+      className="ml-0.5 inline-block h-[1.05em] w-[0.55em] translate-y-[0.18em] animate-[blink_1s_steps(1)_infinite] bg-foreground/70 motion-reduce:animate-none"
     />
   );
 }
@@ -449,12 +397,8 @@ function Caret() {
 function Spinner() {
   const [i, setI] = useState(0);
   useEffect(() => {
-    const id = setInterval(() => setI((n) => (n + 1) % SPINNER.length), 80);
+    const id = setInterval(() => setI((n) => (n + 1) % SPINNER.length), 110);
     return () => clearInterval(id);
   }, []);
-  return (
-    <span aria-hidden className="text-emerald-400">
-      {SPINNER[i]}
-    </span>
-  );
+  return <span className="text-emerald-400">{SPINNER[i]}</span>;
 }

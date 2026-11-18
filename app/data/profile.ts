@@ -1,25 +1,17 @@
-import type { Localized } from "../lib/i18n";
-
 // Everything about you that appears across the site, in one place.
 export const profile = {
   name: "Morgan",
   handle: "morgancacm",
 
-  role: {
-    en: "Full-stack developer, backend-focused",
-    es: "Desarrollador full-stack con foco en backend",
-  } satisfies Localized,
+  role: "Full-stack developer, backend-focused",
 
   // The one sentence a recruiter should remember.
-  tagline: {
-    en: "I build and run real products with AI built in, from the data model to the interface.",
-    es: "Construyo y opero productos reales con IA integrada, del modelo de datos a la interfaz.",
-  } satisfies Localized,
+  tagline: "I build and run real products with AI built in, from the data model to the interface.",
 
-  availability: {
-    en: "Open to remote roles · Colombia, UTC-5",
-    es: "Disponible para trabajo remoto · Colombia, UTC-5",
-  } satisfies Localized,
+  availability: "Open to remote roles · Colombia, UTC-5",
+
+  /** IANA zone for the live clock under the portrait. */
+  timezone: "America/Bogota",
 
   email: "morgancacm@gmail.com",
 

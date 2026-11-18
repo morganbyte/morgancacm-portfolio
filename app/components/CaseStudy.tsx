@@ -3,50 +3,28 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProject, projects } from "../data/projects";
 import { profile } from "../data/profile";
-import { alternates, localePath, type Locale } from "../lib/i18n";
 import { ArrowLeftIcon, ArrowUpRightIcon, GithubIcon } from "./Icons";
 import LiveUserCount from "./LiveUserCount";
 import Placeholder, { isDev } from "./Placeholder";
 import { Badge } from "./ui/badge";
 
 const copy = {
-  en: {
-    back: "All work",
-    visit: "Visit site",
-    code: "Source",
-    problem: "The problem",
-    architecture: "Architecture",
-    decisions: "Key decisions",
-    results: "Results",
-    lessons: "What I learned",
-    stack: "Stack",
-    todo: {
-      problem: "What problem does it solve, and for whom? 2–4 sentences.",
-      architecture: "List the system's pieces top to bottom (frontend → API → data → integrations).",
-      decisions: "2–3 hard calls: what you chose, what you gave up, why. This is what tech leads read.",
-      results: "Real numbers: users, daily use, latency, uptime, items processed.",
-      lessons: "What broke, what you'd do differently.",
-      stack: "Add the stack to this project in app/data/projects.ts.",
-    },
-  },
-  es: {
-    back: "Todos los proyectos",
-    visit: "Visitar sitio",
-    code: "Código",
-    problem: "El problema",
-    architecture: "Arquitectura",
-    decisions: "Decisiones clave",
-    results: "Resultados",
-    lessons: "Lo que aprendí",
-    stack: "Stack",
-    todo: {
-      problem: "¿Qué problema resuelve y para quién? 2–4 frases.",
-      architecture: "Lista las piezas del sistema de arriba abajo (frontend → API → datos → integraciones).",
-      decisions: "2–3 decisiones difíciles: qué elegiste, qué sacrificaste, por qué. Esto es lo que lee un líder técnico.",
-      results: "Números reales: usuarios, uso diario, latencia, uptime, elementos procesados.",
-      lessons: "Qué se rompió, qué harías distinto.",
-      stack: "Agrega el stack de este proyecto en app/data/projects.ts.",
-    },
+  back: "All work",
+  visit: "Visit site",
+  code: "Source",
+  problem: "The problem",
+  architecture: "Architecture",
+  decisions: "Key decisions",
+  results: "Results",
+  lessons: "What I learned",
+  stack: "Stack",
+  todo: {
+    problem: "What problem does it solve, and for whom? 2–4 sentences.",
+    architecture: "List the system's pieces top to bottom (frontend → API → data → integrations).",
+    decisions: "2–3 hard calls: what you chose, what you gave up, why. This is what tech leads read.",
+    results: "Real numbers: users, daily use, latency, uptime, items processed.",
+    lessons: "What broke, what you'd do differently.",
+    stack: "Add the stack to this project in app/data/projects.ts.",
   },
 };
 
@@ -54,13 +32,13 @@ export function caseStudyParams() {
   return projects.map((p) => ({ slug: p.slug }));
 }
 
-export function caseStudyMetadata(lang: Locale, slug: string): Metadata {
+export function caseStudyMetadata(slug: string): Metadata {
   const project = getProject(slug);
   if (!project) return {};
   return {
     title: `${project.title} | ${profile.name}`,
-    description: project.summary[lang],
-    alternates: alternates(lang, `/work/${slug}`),
+    description: project.summary,
+    alternates: { canonical: `/work/${slug}` },
   };
 }
 
@@ -83,16 +61,16 @@ function Section({
   );
 }
 
-export function CaseStudyPage({ lang, slug }: { lang: Locale; slug: string }) {
+export function CaseStudyPage({ slug }: { slug: string }) {
   const project = getProject(slug);
   if (!project) notFound();
-  const t = copy[lang];
+  const t = copy;
   const cs = project.caseStudy;
 
   return (
     <article className="mx-auto max-w-2xl px-6 pb-24 pt-16 sm:pt-24">
       <Link
-        href={localePath(lang, "/work")}
+        href={"/work"}
         className="mb-10 inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-foreground"
       >
         <ArrowLeftIcon className="size-4" />
@@ -105,11 +83,11 @@ export function CaseStudyPage({ lang, slug }: { lang: Locale; slug: string }) {
           {project.year && <Badge variant="outline">{project.year}</Badge>}
         </div>
         <p className="mt-4 max-w-prose text-lg leading-relaxed text-foreground/80">
-          {project.summary[lang]}
+          {project.summary}
         </p>
         {project.liveUsers && (
           <div className="mt-4">
-            <LiveUserCount lang={lang} />
+            <LiveUserCount />
           </div>
         )}
         <div className="mt-6 flex flex-wrap gap-4 text-sm">
@@ -140,7 +118,7 @@ export function CaseStudyPage({ lang, slug }: { lang: Locale; slug: string }) {
 
       <Section title={t.problem} todo={t.todo.problem}>
         {cs.problem && (
-          <p className="max-w-prose leading-relaxed text-foreground/80">{cs.problem[lang]}</p>
+          <p className="max-w-prose leading-relaxed text-foreground/80">{cs.problem}</p>
         )}
       </Section>
 
@@ -152,7 +130,7 @@ export function CaseStudyPage({ lang, slug }: { lang: Locale; slug: string }) {
                 {i > 0 && <span aria-hidden className="h-5 w-px bg-border" />}
                 <div className="w-full rounded-lg border border-border bg-subtle/20 px-4 py-3">
                   <p className="text-sm font-medium text-foreground">{node.name}</p>
-                  <p className="text-sm text-muted">{node.detail[lang]}</p>
+                  <p className="text-sm text-muted">{node.detail}</p>
                 </div>
               </li>
             ))}
@@ -164,9 +142,9 @@ export function CaseStudyPage({ lang, slug }: { lang: Locale; slug: string }) {
         {!!cs.decisions?.length && (
           <div className="space-y-6">
             {cs.decisions.map((d) => (
-              <div key={d.title.en}>
-                <h3 className="mb-1.5 font-medium text-foreground">{d.title[lang]}</h3>
-                <p className="max-w-prose leading-relaxed text-foreground/80">{d.body[lang]}</p>
+              <div key={d.title}>
+                <h3 className="mb-1.5 font-medium text-foreground">{d.title}</h3>
+                <p className="max-w-prose leading-relaxed text-foreground/80">{d.body}</p>
               </div>
             ))}
           </div>
@@ -177,10 +155,10 @@ export function CaseStudyPage({ lang, slug }: { lang: Locale; slug: string }) {
         {!!cs.results?.length && (
           <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {cs.results.map((r) => (
-              <div key={r.label.en} className="rounded-lg border border-border bg-subtle/20 px-4 py-3">
-                <dt className="sr-only">{r.label[lang]}</dt>
+              <div key={r.label} className="rounded-lg border border-border bg-subtle/20 px-4 py-3">
+                <dt className="sr-only">{r.label}</dt>
                 <dd className="text-2xl font-medium tabular-nums text-foreground">{r.value}</dd>
-                <dd className="text-xs text-muted">{r.label[lang]}</dd>
+                <dd className="text-xs text-muted">{r.label}</dd>
               </div>
             ))}
           </dl>
@@ -189,7 +167,7 @@ export function CaseStudyPage({ lang, slug }: { lang: Locale; slug: string }) {
 
       <Section title={t.lessons} todo={t.todo.lessons}>
         {cs.lessons && (
-          <p className="max-w-prose leading-relaxed text-foreground/80">{cs.lessons[lang]}</p>
+          <p className="max-w-prose leading-relaxed text-foreground/80">{cs.lessons}</p>
         )}
       </Section>
 

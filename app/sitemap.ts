@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { projects } from "./data/projects";
-import { SITE_URL, localePath } from "./lib/i18n";
+import { SITE_URL } from "./lib/site";
 
 const paths = [
   { path: "/", priority: 1 },
@@ -12,15 +12,9 @@ const paths = [
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();
   return paths.map(({ path, priority }) => ({
-    url: `${SITE_URL}${localePath("en", path)}`,
+    url: `${SITE_URL}${path}`,
     lastModified,
     changeFrequency: "monthly",
     priority,
-    alternates: {
-      languages: {
-        en: `${SITE_URL}${localePath("en", path)}`,
-        es: `${SITE_URL}${localePath("es", path)}`,
-      },
-    },
   }));
 }
