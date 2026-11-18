@@ -409,11 +409,12 @@ function isOneLine(el: HTMLTextAreaElement) {
   return el.scrollHeight < line * 1.5;
 }
 
-// Turns URLs, bare domains (github.com/…) and emails in ditta's replies into
-// links, styled like the ones /links prints. ditta always writes in lowercase:
-// the prose is lowercased here too, links keep their case.
+// Turns emails, URLs, bare domains (github.com/…) and this site's project
+// pages (/work/<slug>) in ditta's replies into links, styled like the ones
+// /links prints. ditta always writes in lowercase: the prose is lowercased
+// here too, links keep their case.
 const LINK_RE =
-  /([\w.+-]+@[\w-]+(?:\.[\w-]+)+)|(https?:\/\/[^\s<>"']+|\b(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|dev|app|io|co|me|net|org|ai)(?![\w-])(?:\/[^\s<>"']*)?)/gi;
+  /([\w.+-]+@[\w-]+(?:\.[\w-]+)+)|(https?:\/\/[^\s<>"']+|\b(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|dev|app|io|co|me|net|org|ai)(?![\w-])(?:\/[^\s<>"']*)?)|((?<![\w./])\/work\/[a-z0-9-]+)/gi;
 
 function Linkified({ text }: { text: string }) {
   const out: React.ReactNode[] = [];
@@ -425,21 +426,29 @@ function Linkified({ text }: { text: string }) {
     raw = raw.slice(0, raw.length - trail.length);
     const start = m.index;
     if (start > last) out.push(text.slice(last, start).toLowerCase());
-    const href = m[1]
-      ? `mailto:${raw}`
-      : /^https?:\/\//i.test(raw)
-        ? raw
-        : `https://${raw}`;
-    out.push(
-      <a
-        key={start}
-        href={href}
-        {...(m[1] ? {} : { target: "_blank", rel: "noopener noreferrer" })}
-        className={linkClass}
-      >
-        {raw}
-      </a>,
-    );
+    if (m[3]) {
+      out.push(
+        <Link key={start} href={raw.toLowerCase()} className={linkClass}>
+          {raw}
+        </Link>,
+      );
+    } else {
+      const href = m[1]
+        ? `mailto:${raw}`
+        : /^https?:\/\//i.test(raw)
+          ? raw
+          : `https://${raw}`;
+      out.push(
+        <a
+          key={start}
+          href={href}
+          {...(m[1] ? {} : { target: "_blank", rel: "noopener noreferrer" })}
+          className={linkClass}
+        >
+          {raw}
+        </a>,
+      );
+    }
     last = start + raw.length;
   }
   if (last < text.length) out.push(text.slice(last).toLowerCase());

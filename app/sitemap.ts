@@ -4,8 +4,6 @@ import { SITE_URL } from "./lib/site";
 
 const paths = [
   { path: "/", priority: 1 },
-  { path: "/about", priority: 0.8 },
-  { path: "/work", priority: 0.8 },
   ...projects.map((p) => ({ path: `/work/${p.slug}`, priority: 0.7 })),
 ];
 

@@ -20,6 +20,9 @@ const nextConfig: NextConfig = {
       { source: "/en/:path*", destination: "/:path*", permanent: true },
       { source: "/es", destination: "/", permanent: true },
       { source: "/es/:path*", destination: "/:path*", permanent: true },
+      // One-screen portfolio: ditta answers what these pages used to show.
+      { source: "/about", destination: "/", permanent: false },
+      { source: "/work", destination: "/", permanent: false },
     ];
   },
 };
