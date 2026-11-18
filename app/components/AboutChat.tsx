@@ -24,6 +24,7 @@ const copy = {
   copyFailed: "couldn't copy it, select it by hand",
   unknown: (c: string) => `unknown command: ${c} · try /help`,
   errors: {
+    private: `ditta is in private beta for now. /help still works, or email ${profile.email}`,
     rate: `rate limit reached. try again in a few minutes, or email ${profile.email}`,
     generic: "connection lost. try again in a moment.",
   },
@@ -140,11 +141,13 @@ export default function AboutChat() {
     }
   };
 
-  const errorText = error
-    ? error.message.includes("rate_limited")
-      ? t.errors.rate
-      : t.errors.generic
-    : null;
+  const errorText = !error
+    ? null
+    : error.message.includes("ditta_private")
+      ? t.errors.private
+      : error.message.includes("rate_limited")
+        ? t.errors.rate
+        : t.errors.generic;
 
   const last = messages[messages.length - 1];
   const streamingId =

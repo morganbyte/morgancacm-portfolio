@@ -7,6 +7,7 @@ import {
 } from "ai";
 import { buildKnowledge } from "../../data/knowledge";
 import { profile } from "../../data/profile";
+import { dittaAccess } from "../../lib/ditta-access";
 
 // Small, fast and cheap: this endpoint is public. Set DITTA_MODEL per
 // environment in Vercel to try another model on staging without touching prod.
@@ -49,8 +50,14 @@ function textOf(message: UIMessage) {
 }
 
 export async function POST(req: Request) {
+  // Private until DITTA_PUBLIC=true; see app/lib/ditta-access.ts.
+  const access = await dittaAccess();
+  if (access === "closed") {
+    return Response.json({ error: "ditta_private" }, { status: 403 });
+  }
+
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
-  if (limited(ip)) {
+  if (access === "public" && limited(ip)) {
     return Response.json({ error: "rate_limited" }, { status: 429 });
   }
 
