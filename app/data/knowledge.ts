@@ -10,6 +10,7 @@ import { projects } from "./projects";
 //   - who Morgan is, how Morgan works → app/data/about.ts
 //   - contact, links, stack           → app/data/profile.ts
 //   - projects and case studies       → app/data/projects.ts (also the /work/<slug> pages)
+//   - a project's public docs          → its GitHub repo (Project.docs), read on the fly
 //   - everything about one project    → content/projects/<slug>.md (Morgan writes it, in Spanish)
 //   - anything else                   → app/data/notes.ts
 
@@ -30,7 +31,43 @@ function projectNotes(slug: string): string {
   return sections.join("\n\n");
 }
 
-export function buildKnowledge(): string {
+// The public docs repo of a project (README, ARCHITECTURE, CHANGELOG).
+// Cached for an hour, so a push to the docs repo reaches ditta within the hour
+// without redeploying. Returns "" if GitHub can't be reached: ditta then falls
+// back to the notes and site data below.
+const DOC_FILES = ["README.md", "ARCHITECTURE.md", "CHANGELOG.md"];
+
+async function projectDocs(repo: string): Promise<string> {
+  const files = await Promise.all(
+    DOC_FILES.map(async (file) => {
+      try {
+        const res = await fetch(`https://raw.githubusercontent.com/${repo}/HEAD/${file}`, {
+          next: { revalidate: 3600 },
+          signal: AbortSignal.timeout(4000),
+        });
+        if (!res.ok) return "";
+        return `### ${file}\n${cleanMarkdown(await res.text())}`;
+      } catch {
+        return "";
+      }
+    }),
+  );
+  return files.filter(Boolean).join("\n\n");
+}
+
+// Drop what costs tokens and tells the model nothing: HTML, images, badges.
+function cleanMarkdown(md: string): string {
+  return md
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, "") // images
+    .replace(/<\/?(?:p|picture|source|img|table|tr|td|sub|br)\b[^>]*>/gi, "")
+    .replace(/<a\s+href="([^"]+)"[^>]*>([^<]*)<\/a>/gi, "$2 ($1)")
+    .replace(/<\/?strong>/gi, "**")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+export async function buildKnowledge(): Promise<string> {
   const lines: string[] = [
     `Name: ${profile.name} (handle: ${profile.handle})`,
     `Role: ${profile.role}`,
@@ -55,13 +92,13 @@ export function buildKnowledge(): string {
     if (p.live) lines.push(`Live: ${p.live}`);
     if (p.repo) lines.push(`Code: ${p.repo}`);
 
-    // Once Morgan has written content/projects/<slug>.md, it's the only source
-    // for the project: mixing it with older lines makes the model pick wrong.
+    // The docs repo and Morgan's notes replace the older lines in projects.ts:
+    // mixing old and new makes the model pick wrong.
+    const docs = p.docs ? await projectDocs(p.docs) : "";
     const notesMd = projectNotes(p.slug);
-    if (notesMd) {
-      lines.push(`Written by ${profile.name} (in Spanish):`, notesMd, "");
-      continue;
-    }
+    if (docs) lines.push(`Public docs (github.com/${p.docs}):`, docs, "");
+    if (notesMd) lines.push(`Written by ${profile.name} (in Spanish):`, notesMd, "");
+    if (docs || notesMd) continue;
 
     lines.push(p.summary);
     if (p.stack.length) lines.push(`Stack: ${p.stack.join(", ")}`);

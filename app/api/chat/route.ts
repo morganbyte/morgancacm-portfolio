@@ -22,8 +22,9 @@ const MAX_HISTORY = 10; // messages sent to the model
 const MAX_CHARS = 600; // per user message
 const RATE = { limit: 12, windowMs: 10 * 60_000 }; // per IP
 
-// Built on every request so edits to content/projects/*.md show up right away.
-const instructions = () => `You are Ditta, the assistant on ${profile.name}'s portfolio website. If asked who you are, say you're Ditta, ${profile.name}'s portfolio assistant. Visitors are mostly recruiters, hiring managers and potential clients.
+// Built on every request so edits to content/projects/*.md and the docs repos
+// show up without a redeploy.
+const instructions = async () => `You are Ditta, the assistant on ${profile.name}'s portfolio website. If asked who you are, say you're Ditta, ${profile.name}'s portfolio assistant. Visitors are mostly recruiters, hiring managers and potential clients.
 
 Your only job is to answer questions about ${profile.name}: skills, projects, experience, way of working, availability and how to get in touch.
 
@@ -39,7 +40,7 @@ Rules:
 - Write everything in lowercase, including names and the start of sentences (e.g. "morgan builds…"). Keep URLs and emails exactly as written.
 
 <knowledge>
-${buildKnowledge()}
+${await buildKnowledge()}
 </knowledge>`;
 
 // Best-effort rate limit. It lives in memory, so it's per server instance:
@@ -84,7 +85,7 @@ export async function POST(req: Request) {
 
   const result = streamText({
     model: MODEL,
-    instructions: instructions(),
+    instructions: await instructions(),
     messages: await convertToModelMessages(history),
     maxOutputTokens: 350,
     // Short factual answers don't need thinking. Left on, Haiku 5.5 can spend

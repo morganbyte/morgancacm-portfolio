@@ -11,6 +11,7 @@ to `main`, then tag the release `ditta-vX.Y.Z`.
 - Replies are always lowercase (links keep their case).
 - One-screen portfolio: ditta links each project's /work/<slug> page.
 - Project knowledge from content/projects/<slug>.md, written by Morgan.
+- Reads each project's public docs repo on GitHub (Vekipper: morganbyte/vekipper-docs), refreshed hourly with no redeploy.
 - Thinking off, so replies never come back empty.
 
 ## 1.0.0

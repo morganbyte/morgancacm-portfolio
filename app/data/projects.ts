@@ -24,6 +24,9 @@ export type Project = {
   stack: string[];
   live?: string;
   repo?: string;
+  /** Public GitHub repo ("owner/name") with the project's docs. ditta reads its
+   *  README, ARCHITECTURE and CHANGELOG (app/data/knowledge.ts). */
+  docs?: string;
   /** Show Vekipper's live user count (app/api/vekipper-users). */
   liveUsers?: boolean;
   featured?: boolean;
@@ -39,6 +42,7 @@ export const projects: Project[] = [
     summary: "A personal command center that brings Google Calendar, Tasks and Gmail onto one screen, with two-way sync and an integrated AI agent.",
     stack: ["TypeScript", "FastAPI", "Supabase", "Docker", "Vercel", "AI agent"],
     live: "https://vekipper.com",
+    docs: "morganbyte/vekipper-docs",
     liveUsers: true,
     caseStudy: {
       problem: "Calendar, tasks and email live in three different Google apps, so planning a day means jumping between tabs. Vekipper puts them on a single screen built to stay open all day, and every change syncs both ways: edit something in Vekipper and it shows up in Google, and vice versa.",
