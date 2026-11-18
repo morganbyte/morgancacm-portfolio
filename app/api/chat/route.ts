@@ -1,3 +1,4 @@
+import { createAnthropic } from "@ai-sdk/anthropic";
 import {
   convertToModelMessages,
   createUIMessageStreamResponse,
@@ -8,9 +9,15 @@ import {
 import { buildKnowledge } from "../../data/knowledge";
 import { profile } from "../../data/profile";
 
-// Small, fast and cheap: this endpoint is public. Set DITTA_MODEL per
-// environment in Vercel to try another model on staging without touching prod.
-const MODEL = process.env.DITTA_MODEL ?? "anthropic/claude-haiku-5.5";
+// Models come from OpenCode (pay-as-you-go credits), through its
+// Anthropic-compatible endpoint. Small, fast and cheap: this endpoint is public.
+// Set DITTA_MODEL per environment in Vercel to try another Claude model on
+// staging without touching prod.
+const opencode = createAnthropic({
+  baseURL: "https://opencode.ai/inference/anthropic/v1",
+  apiKey: process.env.OPENCODE_API_KEY,
+});
+const MODEL = opencode(process.env.DITTA_MODEL ?? "claude-haiku-5-5");
 const MAX_HISTORY = 10; // messages sent to the model
 const MAX_CHARS = 600; // per user message
 const RATE = { limit: 12, windowMs: 10 * 60_000 }; // per IP
