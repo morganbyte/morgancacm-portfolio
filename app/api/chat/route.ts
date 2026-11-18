@@ -8,8 +8,9 @@ import {
 import { buildKnowledge } from "../../data/knowledge";
 import { profile } from "../../data/profile";
 
-// Small, fast and cheap: this endpoint is public.
-const MODEL = "anthropic/claude-haiku-5.5";
+// Small, fast and cheap: this endpoint is public. Set DITTA_MODEL per
+// environment in Vercel to try another model on staging without touching prod.
+const MODEL = process.env.DITTA_MODEL ?? "anthropic/claude-haiku-5.5";
 const MAX_HISTORY = 10; // messages sent to the model
 const MAX_CHARS = 600; // per user message
 const RATE = { limit: 12, windowMs: 10 * 60_000 }; // per IP

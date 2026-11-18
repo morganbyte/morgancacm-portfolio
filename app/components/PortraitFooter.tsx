@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ditta } from "../data/ditta";
 import { profile } from "../data/profile";
+import { APP_ENV, isProduction } from "../lib/env";
 
 const copy = { city: "Bogotá", credits: `designed & built by ${profile.name}` };
 
@@ -37,6 +38,7 @@ export default function PortraitFooter() {
       <span aria-hidden>·</span>
       <span>
         {ditta.name} v{ditta.version}
+        {!isProduction && <span className="text-amber-400/80"> · {APP_ENV}</span>}
       </span>
       <span aria-hidden>·</span>
       <span>
