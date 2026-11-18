@@ -61,8 +61,16 @@ export default function AboutChat() {
   const historyPos = useRef(-1); // -1 = not browsing history
   const nextId = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const busy = status === "submitted" || status === "streaming";
+
+  // The prompt wraps long text onto new lines and grows to fit it.
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [input]);
 
   // Keep the newest line in view while it streams in.
   useEffect(() => {
@@ -130,11 +138,21 @@ export default function AboutChat() {
     setInput(h[pos]);
   };
 
-  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Escape" && busy) {
+  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    const el = e.currentTarget;
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+      // Enter sends, like a one-line prompt; the text only wraps visually.
+      e.preventDefault();
+      ask(input);
+    } else if (e.key === "Escape" && busy) {
       e.preventDefault();
       stop();
-    } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+    } else if (
+      // On a wrapped message the arrows move the caret between lines; they
+      // browse history only from the very start (↑) or end (↓) of the text.
+      (e.key === "ArrowUp" && (isOneLine(el) || el.selectionEnd === 0)) ||
+      (e.key === "ArrowDown" && (isOneLine(el) || el.selectionStart === el.value.length))
+    ) {
       e.preventDefault();
       browseHistory(e.key === "ArrowUp" ? -1 : 1);
     }
@@ -161,7 +179,7 @@ export default function AboutChat() {
       className="flex h-full w-full flex-col font-mono text-[13px] leading-[1.65] text-foreground/90"
       onClick={(e) => {
         // Clicking anywhere in the window focuses the prompt, like a terminal.
-        if ((e.target as HTMLElement).closest("button, a, input")) return;
+        if ((e.target as HTMLElement).closest("button, a, textarea")) return;
         if (!window.getSelection()?.toString()) inputRef.current?.focus();
       }}
     >
@@ -219,7 +237,7 @@ export default function AboutChat() {
               markClass="text-foreground"
               className="mt-2"
             >
-              {text}
+              <Linkified text={text} />
               {m.id === streamingId && <Caret />}
             </Row>
           );
@@ -248,7 +266,7 @@ export default function AboutChat() {
           e.preventDefault();
           ask(input);
         }}
-        className="flex items-center gap-2 rounded-md border border-white/[0.12] px-3 py-2 transition-colors focus-within:border-white/25"
+        className="flex items-start gap-2 rounded-md border border-white/[0.12] px-3 py-2 transition-colors focus-within:border-white/25"
       >
         <span
           aria-hidden
@@ -256,17 +274,18 @@ export default function AboutChat() {
         >
           &gt;
         </span>
-        <input
+        <textarea
           ref={inputRef}
+          rows={1}
           value={input}
-          onChange={(e) => setInput(e.currentTarget.value)}
+          onChange={(e) => setInput(e.currentTarget.value.replace(/\n/g, " "))}
           onKeyDown={onKeyDown}
           placeholder={t.placeholder}
           maxLength={MAX_CHARS}
           aria-label={t.placeholder}
           autoComplete="off"
           spellCheck={false}
-          className="min-w-0 flex-1 bg-transparent text-foreground caret-emerald-400 placeholder:text-foreground/25 focus:outline-none"
+          className="chat-scroll max-h-40 min-w-0 flex-1 resize-none overflow-y-auto break-words bg-transparent text-foreground caret-emerald-400 placeholder:text-foreground/25 focus:outline-none"
         />
       </form>
 
@@ -383,6 +402,47 @@ function CommandOutput({ entry }: { entry: LocalEntry }) {
         </span>
       );
   }
+}
+
+function isOneLine(el: HTMLTextAreaElement) {
+  const line = parseFloat(getComputedStyle(el).lineHeight) || 20;
+  return el.scrollHeight < line * 1.5;
+}
+
+// Turns URLs, bare domains (github.com/…) and emails in ditta's replies into
+// links, styled like the ones /links prints.
+const LINK_RE =
+  /([\w.+-]+@[\w-]+(?:\.[\w-]+)+)|(https?:\/\/[^\s<>"']+|\b(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|dev|app|io|co|me|net|org|ai)(?![\w-])(?:\/[^\s<>"']*)?)/gi;
+
+function Linkified({ text }: { text: string }) {
+  const out: React.ReactNode[] = [];
+  let last = 0;
+  for (const m of text.matchAll(LINK_RE)) {
+    let raw = m[0];
+    // Sentence punctuation right after a link isn't part of it.
+    const trail = raw.match(/[.,;:!?)\]]+$/)?.[0] ?? "";
+    raw = raw.slice(0, raw.length - trail.length);
+    const start = m.index;
+    if (start > last) out.push(text.slice(last, start));
+    const href = m[1]
+      ? `mailto:${raw}`
+      : /^https?:\/\//i.test(raw)
+        ? raw
+        : `https://${raw}`;
+    out.push(
+      <a
+        key={start}
+        href={href}
+        {...(m[1] ? {} : { target: "_blank", rel: "noopener noreferrer" })}
+        className={linkClass}
+      >
+        {raw}
+      </a>,
+    );
+    last = start + raw.length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return <>{out}</>;
 }
 
 function Caret() {
