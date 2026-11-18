@@ -1,15 +1,11 @@
 import { ImageResponse } from "next/og";
 import type { Locale } from "../lib/i18n";
 
+import { profile } from "../data/profile";
+
 const copy = {
-  es: {
-    alt: "Andrés Morgan — Desarrollador de software",
-    heading: "Convierto mis ideas de producto en sistemas de software funcionales.",
-  },
-  en: {
-    alt: "Andrés Morgan — Software Developer",
-    heading: "I turn my product ideas into functional software systems.",
-  },
+  en: { alt: `${profile.name} | ${profile.role.en}` },
+  es: { alt: `${profile.name} | ${profile.role.es}` },
 };
 
 
@@ -44,7 +40,7 @@ export function ogImage(lang: Locale) {
             textTransform: "uppercase",
           }}
         >
-          morgancacm
+          {profile.name}
         </div>
 
         <div
@@ -56,13 +52,13 @@ export function ogImage(lang: Locale) {
         >
           <div
             style={{
-              fontSize: 72,
+              fontSize: 64,
               fontWeight: 600,
               lineHeight: 1.05,
               letterSpacing: -1.5,
             }}
           >
-            {t.heading}
+            {profile.tagline[lang]}
           </div>
           <div
             style={{

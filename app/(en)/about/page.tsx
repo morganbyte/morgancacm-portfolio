@@ -1,4 +1,4 @@
-import { AboutPage, aboutMetadata } from "../../../components/Pages";
+import { AboutPage, aboutMetadata } from "@/app/components/Pages";
 
 export const metadata = aboutMetadata("en");
 

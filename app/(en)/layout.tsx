@@ -1,4 +1,4 @@
-import RootShell, { siteMetadata } from "../../components/RootShell";
+import RootShell, { siteMetadata } from "@/app/components/RootShell";
 
 export const metadata = siteMetadata("en");
 

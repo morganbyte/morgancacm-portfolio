@@ -1,21 +1,21 @@
-export const locales = ["es", "en"] as const;
+export const locales = ["en", "es"] as const;
 export type Locale = (typeof locales)[number];
 export type Localized = Record<Locale, string>;
 
 export const SITE_URL = "https://morgancacm-portfolio.vercel.app";
 
-// Spanish lives at the root; English is prefixed with /en.
+// English lives at the root (international audience); Spanish is under /es.
 export function localePath(locale: Locale, path: string) {
-  if (locale === "es") return path;
-  return path === "/" ? "/en" : `/en${path}`;
+  if (locale === "en") return path;
+  return path === "/" ? "/es" : `/es${path}`;
 }
 
 export function localeFromPath(pathname: string): Locale {
-  return pathname === "/en" || pathname.startsWith("/en/") ? "en" : "es";
+  return pathname === "/es" || pathname.startsWith("/es/") ? "es" : "en";
 }
 
 export function stripLocale(pathname: string) {
-  if (localeFromPath(pathname) === "es") return pathname;
+  if (localeFromPath(pathname) === "en") return pathname;
   return pathname.slice(3) || "/";
 }
 
@@ -23,9 +23,9 @@ export function alternates(locale: Locale, path: string) {
   return {
     canonical: localePath(locale, path),
     languages: {
-      es: localePath("es", path),
       en: localePath("en", path),
-      "x-default": localePath("es", path),
+      es: localePath("es", path),
+      "x-default": localePath("en", path),
     },
   };
 }

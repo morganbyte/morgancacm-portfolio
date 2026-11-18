@@ -1,4 +1,4 @@
-import { HomePage, homeMetadata } from "../components/Pages";
+import { HomePage, homeMetadata } from "@/app/components/Pages";
 
 export const metadata = homeMetadata("es");
 

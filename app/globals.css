@@ -53,3 +53,56 @@ a {
 ::-webkit-scrollbar-thumb:hover {
   background: #262626;
 }
+
+/* ---------- ASCII portrait ---------- */
+
+@keyframes portrait-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.portrait {
+  animation: portrait-in 600ms ease-out both;
+  /* Shoulders dissolve into the page instead of ending in a hard edge. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 70%, transparent 100%);
+}
+
+/* ---------- Chat terminal ---------- */
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+.terminal {
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgb(255 255 255 / 0.035), transparent 60%),
+    linear-gradient(180deg, #0f0f0f 0%, #0b0b0b 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.05),
+    0 24px 60px -30px rgb(0 0 0 / 0.9);
+}
+
+/* Barely-there scanlines: texture, not a gimmick. */
+.terminal::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgb(255 255 255 / 0.018) 0,
+    rgb(255 255 255 / 0.018) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+.terminal ::-webkit-scrollbar { width: 6px; }
+.terminal ::-webkit-scrollbar-thumb { background: rgb(255 255 255 / 0.08); border-radius: 3px; }
+.terminal ::-webkit-scrollbar-track { background: transparent; }
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .terminal::after { display: none; }
+}

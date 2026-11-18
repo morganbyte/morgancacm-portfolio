@@ -1,4 +1,4 @@
-import { WorkPage, workMetadata } from "../../components/Pages";
+import { WorkPage, workMetadata } from "@/app/components/Pages";
 
 export const metadata = workMetadata("es");
 
