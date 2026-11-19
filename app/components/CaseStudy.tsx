@@ -9,7 +9,7 @@ import Placeholder, { isDev } from "./Placeholder";
 import { Badge } from "./ui/badge";
 
 const copy = {
-  back: "All work",
+  back: "Back to ditta",
   visit: "Visit site",
   code: "Source",
   problem: "The problem",
@@ -70,7 +70,7 @@ export function CaseStudyPage({ slug }: { slug: string }) {
   return (
     <article className="mx-auto max-w-2xl px-6 pb-24 pt-16 sm:pt-24">
       <Link
-        href={"/work"}
+        href={"/"}
         className="mb-10 inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-foreground"
       >
         <ArrowLeftIcon className="size-4" />

@@ -13,6 +13,8 @@ function appEnv() {
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   env: { NEXT_PUBLIC_APP_ENV: appEnv() },
+  // ditta reads content/projects/*.md at runtime (app/data/knowledge.ts).
+  outputFileTracingIncludes: { "/api/chat": ["./content/**/*.md"] },
   // The site is English-only. Old /en and /es links land on the same page.
   async redirects() {
     return [
@@ -20,6 +22,9 @@ const nextConfig: NextConfig = {
       { source: "/en/:path*", destination: "/:path*", permanent: true },
       { source: "/es", destination: "/", permanent: true },
       { source: "/es/:path*", destination: "/:path*", permanent: true },
+      // One-screen portfolio: ditta answers what these pages used to show.
+      { source: "/about", destination: "/", permanent: false },
+      { source: "/work", destination: "/", permanent: false },
     ];
   },
 };

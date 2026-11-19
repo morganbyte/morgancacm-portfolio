@@ -1,6 +1,8 @@
 // Everything about you that appears across the site, in one place.
 export const profile = {
   name: "Morgan",
+  // Legal name, as it appears in some docs (e.g. Vekipper's). The site uses "Morgan".
+  fullName: "Andrés Contreras",
   handle: "morgancacm",
 
   role: "Full-stack developer, backend-focused",

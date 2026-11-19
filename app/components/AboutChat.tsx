@@ -18,21 +18,27 @@ const copy = {
     email: "copy Morgan's email",
     links: "GitHub, LinkedIn and X",
     projects: "projects and their case studies",
+    retry: "retry the last reply",
     clear: "clear the conversation",
   },
   copied: "copied to clipboard",
   copyFailed: "couldn't copy it, select it by hand",
   unknown: (c: string) => `unknown command: ${c} · try /help`,
+  nothingToRetry: "nothing to retry yet",
   errors: {
     rate: `rate limit reached. try again in a few minutes, or email ${profile.email}`,
-    generic: "connection lost. try again in a moment.",
+    daily: `ditta is resting for today and will be back tomorrow. meanwhile, email ${profile.email}`,
+    generic: "connection lost. type /retry to try again.",
   },
 };
 
 const MAX_CHARS = 600;
+const STORAGE_KEY = "ditta:chat";
 const SPINNER = "·✢✳✶✻✽✻✶✳✢";
 const COMMANDS = ["help", "email", "links", "projects"] as const;
 type Command = (typeof COMMANDS)[number];
+// Everything the autocomplete offers, in /help order.
+const MENU = Object.keys(copy.cmds) as (keyof typeof copy.cmds)[];
 
 // Output of a slash command. Rendered in the transcript, never sent to the model.
 // `at` is how many chat messages existed when it ran, so it sorts in between them.
@@ -42,6 +48,8 @@ type LocalEntry = {
   input: string;
   cmd: Command | null;
   copied?: boolean;
+  /** Plain message instead of a command's output (e.g. "nothing to retry"). */
+  note?: string;
 };
 
 export default function AboutChat() {
@@ -51,6 +59,7 @@ export default function AboutChat() {
     messages,
     setMessages,
     sendMessage,
+    regenerate,
     status,
     stop,
     error,
@@ -63,6 +72,51 @@ export default function AboutChat() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const busy = status === "submitted" || status === "streaming";
+
+  // Slash-command autocomplete: typing "/" lists the commands, filtered as you
+  // type. ↑↓ pick, Tab completes, Enter runs, Esc closes. It opens only on
+  // typing, so recalling "/email" from history doesn't hijack the arrows.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [sel, setSel] = useState(0);
+  const matches =
+    menuOpen && /^\/\S*$/.test(input)
+      ? MENU.filter((c) => c.startsWith(input.slice(1).toLowerCase()))
+      : [];
+  const showMenu = matches.length > 0;
+  const selected = matches[Math.min(sel, matches.length - 1)];
+
+  // The conversation survives a reload but not closing the tab (sessionStorage).
+  // Restored after mount so server and client render the same first frame.
+  const [restored, setRestored] = useState(false);
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? "null");
+      if (saved) {
+        if (Array.isArray(saved.messages)) setMessages(saved.messages);
+        if (Array.isArray(saved.local)) {
+          setLocal(saved.local);
+          nextId.current = Math.max(0, ...saved.local.map((e: LocalEntry) => e.id + 1));
+        }
+        if (Array.isArray(saved.history)) history.current = saved.history;
+      }
+    } catch {
+      // Storage blocked or corrupt: start empty.
+    }
+    setRestored(true);
+  }, [setMessages]);
+
+  // Save once a reply is complete, never a half-streamed one.
+  useEffect(() => {
+    if (!restored || busy) return;
+    try {
+      sessionStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ messages, local, history: history.current }),
+      );
+    } catch {
+      // Storage full or blocked: the chat still works, it just won't survive a reload.
+    }
+  }, [restored, busy, messages, local]);
 
   // The prompt wraps long text onto new lines and grows to fit it.
   useEffect(() => {
@@ -85,6 +139,22 @@ export default function AboutChat() {
       setMessages([]);
       setLocal([]);
       if (error) clearError();
+      return;
+    }
+    if (name === "retry") {
+      // Re-asks the last question: after an error, a stopped reply, or just
+      // for another answer. The new reply replaces the old one in place.
+      if (busy) return;
+      if (messages.some((m) => m.role === "user")) {
+        if (error) clearError();
+        regenerate();
+      } else {
+        const id = nextId.current++;
+        setLocal((l) => [
+          ...l,
+          { id, at: messages.length, input: raw, cmd: null, note: t.nothingToRetry },
+        ]);
+      }
       return;
     }
     const cmd = (COMMANDS as readonly string[]).includes(name)
@@ -120,6 +190,7 @@ export default function AboutChat() {
     if (history.current.at(-1) !== q) history.current.push(q);
     historyPos.current = -1;
     setInput("");
+    setMenuOpen(false);
     inputRef.current?.focus();
   };
 
@@ -136,10 +207,35 @@ export default function AboutChat() {
     }
     historyPos.current = pos;
     setInput(h[pos]);
+    setMenuOpen(false);
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     const el = e.currentTarget;
+    if (showMenu && !e.nativeEvent.isComposing) {
+      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+        e.preventDefault();
+        const n = matches.length;
+        setSel((i) => (Math.min(i, n - 1) + (e.key === "ArrowUp" ? n - 1 : 1)) % n);
+        return;
+      }
+      if (e.key === "Tab") {
+        e.preventDefault();
+        setInput(`/${selected}`);
+        setSel(0);
+        return;
+      }
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        ask(`/${selected}`);
+        return;
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setMenuOpen(false);
+        return;
+      }
+    }
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
       // Enter sends, like a one-line prompt; the text only wraps visually.
       e.preventDefault();
@@ -159,9 +255,11 @@ export default function AboutChat() {
   };
 
   const errorText = error
-    ? error.message.includes("rate_limited")
-      ? t.errors.rate
-      : t.errors.generic
+    ? error.message.includes("daily_limit")
+      ? t.errors.daily
+      : error.message.includes("rate_limited")
+        ? t.errors.rate
+        : t.errors.generic
     : null;
 
   const last = messages[messages.length - 1];
@@ -278,18 +376,55 @@ export default function AboutChat() {
           ref={inputRef}
           rows={1}
           value={input}
-          onChange={(e) => setInput(e.currentTarget.value.replace(/\n/g, " "))}
+          onChange={(e) => {
+            const v = e.currentTarget.value.replace(/\n/g, " ");
+            setInput(v);
+            setMenuOpen(v.startsWith("/"));
+            setSel(0);
+          }}
           onKeyDown={onKeyDown}
           placeholder={t.placeholder}
           maxLength={MAX_CHARS}
           aria-label={t.placeholder}
           autoComplete="off"
+          role="combobox"
+          aria-expanded={showMenu}
+          aria-controls="ditta-commands"
+          aria-autocomplete="list"
+          aria-activedescendant={showMenu ? `ditta-cmd-${selected}` : undefined}
           spellCheck={false}
           className="chat-scroll max-h-40 min-w-0 flex-1 resize-none overflow-y-auto break-words bg-transparent text-foreground caret-emerald-400 placeholder:text-foreground/25 focus:outline-none"
         />
       </form>
 
-      {/* Hints */}
+      {/* Command autocomplete, in place of the hints */}
+      {showMenu ? (
+        <ul id="ditta-commands" role="listbox" className="px-1 pt-1.5 text-[12px]">
+          {matches.map((c) => (
+            <li
+              key={c}
+              id={`ditta-cmd-${c}`}
+              role="option"
+              aria-selected={c === selected}
+              onMouseDown={(e) => {
+                e.preventDefault(); // keep focus in the prompt
+                ask(`/${c}`);
+              }}
+              // Move, not enter: a menu opening under a still cursor keeps its pick.
+              onMouseMove={() => setSel(matches.indexOf(c))}
+              className={`flex cursor-pointer gap-3 px-2 ${
+                c === selected ? "text-emerald-400" : "text-foreground/40"
+              }`}
+            >
+              <span className="w-20 shrink-0">/{c}</span>
+              <span className={c === selected ? "text-foreground/70" : ""}>{copy.cmds[c]}</span>
+            </li>
+          ))}
+          <li aria-hidden className="px-2 pt-1 text-[11px] text-foreground/30">
+            ↑↓ select · tab complete · ↵ run · esc close
+          </li>
+        </ul>
+      ) : (
       <p className="flex justify-between gap-3 px-1 pt-1.5 text-[11px] text-foreground/30">
         <span className="truncate">
           {busy ? (
@@ -303,6 +438,7 @@ export default function AboutChat() {
           )}
         </span>
       </p>
+      )}
     </section>
   );
 }
@@ -339,7 +475,7 @@ function CommandOutput({ entry }: { entry: LocalEntry }) {
     case "help":
       return (
         <>
-          {[...COMMANDS, "clear" as const].map((c) => (
+          {MENU.map((c) => (
             <span key={c} className="block">
               <span className="inline-block w-24 text-foreground/80">/{c}</span>
               <span className="text-muted">{t.cmds[c]}</span>
@@ -396,6 +532,7 @@ function CommandOutput({ entry }: { entry: LocalEntry }) {
         </>
       );
     default:
+      if (entry.note) return <span className="text-muted">{entry.note}</span>;
       return (
         <span className="text-red-400/90">
           {t.unknown(entry.input.split(/\s+/)[0])}
@@ -409,10 +546,12 @@ function isOneLine(el: HTMLTextAreaElement) {
   return el.scrollHeight < line * 1.5;
 }
 
-// Turns URLs, bare domains (github.com/…) and emails in ditta's replies into
-// links, styled like the ones /links prints.
+// Turns emails, URLs, bare domains (github.com/…) and this site's project
+// pages (/work/<slug>) in ditta's replies into links, styled like the ones
+// /links prints. ditta always writes in lowercase: the prose is lowercased
+// here too, links keep their case.
 const LINK_RE =
-  /([\w.+-]+@[\w-]+(?:\.[\w-]+)+)|(https?:\/\/[^\s<>"']+|\b(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|dev|app|io|co|me|net|org|ai)(?![\w-])(?:\/[^\s<>"']*)?)/gi;
+  /([\w.+-]+@[\w-]+(?:\.[\w-]+)+)|(https?:\/\/[^\s<>"']+|\b(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|dev|app|io|co|me|net|org|ai)(?![\w-])(?:\/[^\s<>"']*)?)|((?<![\w./])\/work\/[a-z0-9-]+)/gi;
 
 function Linkified({ text }: { text: string }) {
   const out: React.ReactNode[] = [];
@@ -423,25 +562,33 @@ function Linkified({ text }: { text: string }) {
     const trail = raw.match(/[.,;:!?)\]]+$/)?.[0] ?? "";
     raw = raw.slice(0, raw.length - trail.length);
     const start = m.index;
-    if (start > last) out.push(text.slice(last, start));
-    const href = m[1]
-      ? `mailto:${raw}`
-      : /^https?:\/\//i.test(raw)
-        ? raw
-        : `https://${raw}`;
-    out.push(
-      <a
-        key={start}
-        href={href}
-        {...(m[1] ? {} : { target: "_blank", rel: "noopener noreferrer" })}
-        className={linkClass}
-      >
-        {raw}
-      </a>,
-    );
+    if (start > last) out.push(text.slice(last, start).toLowerCase());
+    if (m[3]) {
+      out.push(
+        <Link key={start} href={raw.toLowerCase()} className={linkClass}>
+          {raw}
+        </Link>,
+      );
+    } else {
+      const href = m[1]
+        ? `mailto:${raw}`
+        : /^https?:\/\//i.test(raw)
+          ? raw
+          : `https://${raw}`;
+      out.push(
+        <a
+          key={start}
+          href={href}
+          {...(m[1] ? {} : { target: "_blank", rel: "noopener noreferrer" })}
+          className={linkClass}
+        >
+          {raw}
+        </a>,
+      );
+    }
     last = start + raw.length;
   }
-  if (last < text.length) out.push(text.slice(last));
+  if (last < text.length) out.push(text.slice(last).toLowerCase());
   return <>{out}</>;
 }
 
