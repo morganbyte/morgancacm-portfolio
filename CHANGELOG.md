@@ -4,6 +4,12 @@ Versions of ditta, the AI on the home page. The version lives in
 `app/data/ditta.ts`: use `X.Y.Z-beta` on `develop`, drop `-beta` when releasing
 to `main`, then tag the release `ditta-vX.Y.Z`.
 
+## 1.2.0 (unreleased)
+
+- Books calls with Morgan through Cal.com: finds free times in the visitor's time zone, confirms the time, name and email with the visitor, then requests the booking. Morgan accepts each one before the invite goes out. Needs `CAL_API_KEY` and `CAL_EVENT_TYPE_ID`; without them ditta asks visitors to email.
+- Booking limits: 2 per IP and 10 in total per day (Upstash, in-memory fallback). If the limiter is down, no bookings.
+- Shows what it's doing while a tool runs ("checking morgan's calendar…").
+
 ## 1.1.0 (unreleased)
 
 - Model served by OpenCode (`claude-haiku-5-5`) instead of Vercel AI Gateway. Needs `OPENCODE_API_KEY`.

@@ -16,6 +16,7 @@ If a new branch depends on work that isn't in `develop` yet, create it from that
 
 - `app/lib/env.ts` exposes `APP_ENV` (`production` | `staging` | `preview` | `local`), set in `next.config.ts` from Vercel's build vars. Anything that isn't production is `noindex` and shows the environment next to ditta's version in the footer.
 - Env vars: `OPENCODE_API_KEY` (Vercel: Production + Preview; local: `.env.local`). `DITTA_MODEL` optionally overrides the model per environment.
+- Bookings (`app/lib/cal.ts`): `CAL_API_KEY` and `CAL_EVENT_TYPE_ID` from Morgan's Cal.com account. The event type must have "Requires confirmation" on, so Morgan accepts every booking ditta makes. Without these vars ditta doesn't offer to book.
 - Usage limits (`app/lib/ratelimit.ts`): Upstash Redis from the Vercel Marketplace (resource `ditta-ratelimit`, free plan). `KV_REST_API_URL` and `KV_REST_API_TOKEN` are set by the integration in every environment; locally they're in `.env.local`. Copy only those two lines from `vercel env pull`: pulling into `.env.local` would drop `OPENCODE_API_KEY`, which isn't in Vercel's Development environment. `DITTA_DAILY_LIMIT` (300 in Production + Preview) caps messages per day across all visitors. Keys are prefixed with the environment, so local and staging tests don't use production's allowance.
 
 ## ditta (the AI chat)
