@@ -18,6 +18,7 @@ to `main`, then tag the release `ditta-vX.Y.Z`.
 - Slash-command autocomplete: typing / lists the commands; ↑↓ select, Tab completes, Enter runs, Esc closes.
 - /retry re-asks the last question after an error or a stopped reply; the connection error suggests it.
 - Prompt caching on the instructions: repeat requests within 5 minutes pay about a tenth for them.
+- Usage limits in Upstash Redis when configured: 12 messages per 10 minutes per IP, shared by every server instance, plus a daily cap for all visitors (DITTA_DAILY_LIMIT, default 300). Falls back to the in-memory per-IP limit.
 - Vekipper knowledge comes from its docs repo; content/projects/vekipper.md removed.
 - Thinking off, so replies never come back empty.
 

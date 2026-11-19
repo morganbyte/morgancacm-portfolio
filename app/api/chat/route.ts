@@ -8,6 +8,7 @@ import {
 } from "ai";
 import { buildKnowledge } from "../../data/knowledge";
 import { profile } from "../../data/profile";
+import { checkLimits } from "../../lib/ratelimit";
 
 // Models come from OpenCode (pay-as-you-go credits), through its
 // Anthropic-compatible endpoint. Small, fast and cheap: this endpoint is public.
@@ -20,7 +21,6 @@ const opencode = createAnthropic({
 const MODEL = opencode(process.env.DITTA_MODEL ?? "claude-haiku-5-5");
 const MAX_HISTORY = 10; // messages sent to the model
 const MAX_CHARS = 600; // per user message
-const RATE = { limit: 12, windowMs: 10 * 60_000 }; // per IP
 
 // Built on every request so edits to content/projects/*.md and the docs repos
 // show up without a redeploy.
@@ -44,28 +44,11 @@ Rules:
 ${await buildKnowledge()}
 </knowledge>`;
 
-// Best-effort rate limit. It lives in memory, so it's per server instance:
-// enough to blunt casual abuse, not a hard guarantee.
-const hits = new Map<string, number[]>();
-function limited(ip: string) {
-  const now = Date.now();
-  const recent = (hits.get(ip) ?? []).filter((t) => now - t < RATE.windowMs);
-  recent.push(now);
-  hits.set(ip, recent);
-  if (hits.size > 5000) hits.clear();
-  return recent.length > RATE.limit;
-}
-
 function textOf(message: UIMessage) {
   return message.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
 }
 
 export async function POST(req: Request) {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
-  if (limited(ip)) {
-    return Response.json({ error: "rate_limited" }, { status: 429 });
-  }
-
   let messages: UIMessage[];
   try {
     ({ messages } = (await req.json()) as { messages: UIMessage[] });
@@ -83,6 +66,11 @@ export async function POST(req: Request) {
   if (history.at(-1)?.role !== "user") {
     return Response.json({ error: "bad_request" }, { status: 400 });
   }
+
+  // Limits go after validation, so malformed requests don't use them up.
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
+  const limit = await checkLimits(ip);
+  if (limit !== "ok") return Response.json({ error: limit }, { status: 429 });
 
   const result = streamText({
     model: MODEL,

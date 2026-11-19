@@ -27,6 +27,7 @@ const copy = {
   nothingToRetry: "nothing to retry yet",
   errors: {
     rate: `rate limit reached. try again in a few minutes, or email ${profile.email}`,
+    daily: `ditta is resting for today and will be back tomorrow. meanwhile, email ${profile.email}`,
     generic: "connection lost. type /retry to try again.",
   },
 };
@@ -254,9 +255,11 @@ export default function AboutChat() {
   };
 
   const errorText = error
-    ? error.message.includes("rate_limited")
-      ? t.errors.rate
-      : t.errors.generic
+    ? error.message.includes("daily_limit")
+      ? t.errors.daily
+      : error.message.includes("rate_limited")
+        ? t.errors.rate
+        : t.errors.generic
     : null;
 
   const last = messages[messages.length - 1];
