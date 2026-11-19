@@ -17,6 +17,7 @@ to `main`, then tag the release `ditta-vX.Y.Z`.
 - The conversation survives a reload (sessionStorage) and is gone when the tab closes.
 - Slash-command autocomplete: typing / lists the commands; ↑↓ select, Tab completes, Enter runs, Esc closes.
 - /retry re-asks the last question after an error or a stopped reply; the connection error suggests it.
+- Prompt caching on the instructions: repeat requests within 5 minutes pay about a tenth for them.
 - Vekipper knowledge comes from its docs repo; content/projects/vekipper.md removed.
 - Thinking off, so replies never come back empty.
 

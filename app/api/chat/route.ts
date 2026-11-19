@@ -86,12 +86,26 @@ export async function POST(req: Request) {
 
   const result = streamText({
     model: MODEL,
-    instructions: await instructions(),
+    // The instructions (~12K tokens with the project docs) are the same for every
+    // visitor, so they're cached: within 5 minutes of the last request they're
+    // billed at a tenth of the price. They change only when the docs refresh.
+    instructions: {
+      role: "system",
+      content: await instructions(),
+      providerOptions: { anthropic: { cacheControl: { type: "ephemeral" } } },
+    },
     messages: await convertToModelMessages(history),
     maxOutputTokens: 350,
     // Short factual answers don't need thinking. Left on, Haiku 5.5 can spend
     // the whole token budget reasoning and reply with nothing.
     providerOptions: { anthropic: { thinking: { type: "disabled" }, effort: "low" } },
+    onFinish: ({ usage }) => {
+      if (process.env.NODE_ENV !== "development") return;
+      const d = usage.inputTokenDetails;
+      console.log(
+        `[ditta] input ${usage.inputTokens} (cache read ${d?.cacheReadTokens ?? 0}, write ${d?.cacheWriteTokens ?? 0}) · output ${usage.outputTokens}`,
+      );
+    },
   });
 
   return createUIMessageStreamResponse({
