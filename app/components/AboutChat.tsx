@@ -1,6 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport, type UIMessage } from "ai";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { profile } from "../data/profile";
@@ -9,8 +10,12 @@ import { projects } from "../data/projects";
 const copy = {
   label: "chat with ditta",
   intro:
-    "i'm morgan's AI. ask me anything about morgan's work, or let me set up a call or meeting with morgan.",
+    "i'm morgan's AI. ask me anything about morgan's work, or ask me to book a call with morgan.",
   thinking: "thinking",
+  tools: {
+    find_slots: "checking morgan's calendar",
+    book_meeting: "requesting the meeting",
+  } as Record<string, string>,
   placeholder: "/help for commands",
   hints: { send: "send", stop: "stop", history: "history" },
   cmds: {
@@ -42,6 +47,27 @@ const MENU = Object.keys(copy.cmds) as (keyof typeof copy.cmds)[];
 
 // Output of a slash command. Rendered in the transcript, never sent to the model.
 // `at` is how many chat messages existed when it ran, so it sorts in between them.
+// The visitor's time zone goes with every request, so ditta offers meeting
+// times in their local time.
+const transport = new DefaultChatTransport({
+  body: () => ({ timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
+});
+
+// One text part per step: a reply that used tools has several.
+function textOf(m: UIMessage) {
+  return m.parts
+    .flatMap((p) => (p.type === "text" && p.text ? [p.text] : []))
+    .join("\n\n");
+}
+
+/** The tool the reply is waiting on, if it has no text after it yet. */
+function runningTool(m: UIMessage | undefined) {
+  const p = m?.role === "assistant" ? m.parts.at(-1) : undefined;
+  if (!p?.type.startsWith("tool-")) return null;
+  if (!("state" in p) || p.state === "output-available" || p.state === "output-error") return null;
+  return p.type.slice(5);
+}
+
 type LocalEntry = {
   id: number;
   at: number;
@@ -64,7 +90,7 @@ export default function AboutChat() {
     stop,
     error,
     clearError,
-  } = useChat();
+  } = useChat({ transport });
   const [local, setLocal] = useState<LocalEntry[]>([]);
   const history = useRef<string[]>([]);
   const historyPos = useRef(-1); // -1 = not browsing history
@@ -265,6 +291,9 @@ export default function AboutChat() {
   const last = messages[messages.length - 1];
   const streamingId =
     status === "streaming" && last?.role === "assistant" ? last.id : null;
+  // While a tool runs (or between steps) the reply has nothing new to show.
+  const tool = busy ? runningTool(last) : null;
+  const waiting = status === "submitted" || (status === "streaming" && (!!tool || !textOf(last)));
 
   const timeline = [
     ...messages.map((m, i) => ({ kind: "chat" as const, m, order: i + 0.5 })),
@@ -315,9 +344,7 @@ export default function AboutChat() {
             );
           }
           const { m } = item;
-          const text = m.parts
-            .map((p) => (p.type === "text" ? p.text : ""))
-            .join("");
+          const text = textOf(m);
           if (!text) return null;
           return m.role === "user" ? (
             <Row
@@ -336,14 +363,15 @@ export default function AboutChat() {
               className="mt-2"
             >
               <Linkified text={text} />
-              {m.id === streamingId && <Caret />}
+              {m.id === streamingId && !tool && <Caret />}
             </Row>
           );
         })}
 
-        {status === "submitted" && (
+        {waiting && (
           <Row mark={<Spinner />} className="mt-2 text-muted">
-            {t.thinking}… <span className="text-foreground/30">(esc)</span>
+            {(tool && t.tools[tool]) || t.thinking}…{" "}
+            <span className="text-foreground/30">(esc)</span>
           </Row>
         )}
 

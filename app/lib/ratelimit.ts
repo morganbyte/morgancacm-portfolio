@@ -68,3 +68,46 @@ function memoryLimited(ip: string) {
   if (hits.size > 5000) hits.clear();
   return recent.length > PER_IP.limit;
 }
+
+// Bookings through ditta: 2 per IP and 10 in total per day. Every booking is a
+// request Morgan still has to accept, so this only keeps the inbox sane.
+const BOOKINGS = { perIp: 2, perDay: 10 } as const;
+
+const bookPerIp = redis
+  ? new Ratelimit({
+      redis,
+      limiter: Ratelimit.fixedWindow(BOOKINGS.perIp, "1 d"),
+      prefix: `${prefix}:book-ip`,
+      timeout: 1000,
+    })
+  : null;
+
+const bookPerDay = redis
+  ? new Ratelimit({
+      redis,
+      limiter: Ratelimit.fixedWindow(BOOKINGS.perDay, "1 d"),
+      prefix: `${prefix}:book-day`,
+      timeout: 1000,
+      ephemeralCache: false,
+    })
+  : null;
+
+const bookHits = new Map<string, number[]>();
+
+export async function canBook(ip: string): Promise<boolean> {
+  if (!bookPerIp || !bookPerDay) {
+    const now = Date.now();
+    const recent = (bookHits.get(ip) ?? []).filter((t) => now - t < 86_400_000);
+    if (recent.length >= BOOKINGS.perIp) return false;
+    bookHits.set(ip, [...recent, now]);
+    return true;
+  }
+  try {
+    if (!(await bookPerIp.limit(ip)).success) return false;
+    return (await bookPerDay.limit("all")).success;
+  } catch (err) {
+    // Unlike chat messages, a booking isn't worth risking: fail closed.
+    console.error("[ditta] booking limit unavailable", err);
+    return false;
+  }
+}
